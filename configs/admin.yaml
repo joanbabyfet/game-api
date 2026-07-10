@@ -1,0 +1,4 @@
+app:
+  name: admin-api
+  port: 8081
+  mode: release

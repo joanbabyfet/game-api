@@ -1,0 +1,43 @@
+package model
+
+// 提现订单状态
+const (
+	WithdrawOrderStatusPending int8 = 0 // 待处理
+	WithdrawOrderStatusSuccess int8 = 1 // 成功
+	WithdrawOrderStatusFailed  int8 = 2 // 失败
+)
+
+// WithdrawOrder 提现订单
+type WithdrawOrder struct {
+	// 主键
+	ID uint64 `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+
+	// 提现订单号
+	OrderNo string `gorm:"column:order_no;size:64" json:"order_no"`
+
+	// 第三方订单号
+	ThirdOrderNo string `gorm:"column:third_order_no;size:64" json:"third_order_no"`
+
+	// 玩家ID
+	UID uint64 `gorm:"column:uid" json:"uid"`
+
+	// 代理ID
+	AgentID uint32 `gorm:"column:agent_id" json:"agent_id"`
+
+	// 提现金额（最小货币单位）
+	Amount uint64 `gorm:"column:amount" json:"amount"`
+
+	// 状态
+	Status int8 `gorm:"column:status" json:"status"`
+
+	// 完成时间
+	FinishTime uint32 `gorm:"column:finish_time" json:"finish_time"`
+
+	// 创建时间
+	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+}
+
+// TableName 表名
+func (WithdrawOrder) TableName() string {
+	return "withdraw_order"
+}

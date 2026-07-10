@@ -1,0 +1,4 @@
+app:
+  name: provider-api
+  port: 8080
+  mode: release
