@@ -34,7 +34,7 @@ type WithdrawOrder struct {
 	FinishTime uint32 `gorm:"column:finish_time" json:"finish_time"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 }
 
 // TableName 表名

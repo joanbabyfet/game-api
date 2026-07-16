@@ -41,14 +41,14 @@ func (r *AgentRepository) Update(agent *model.Agent) error {
 }
 
 // Delete 删除代理
-func (r *AgentRepository) Delete(id uint64) error {
+func (r *AgentRepository) Delete(id uint32) error {
 	return r.db.
 		Delete(&model.Agent{}, "id = ?", id).
 		Error
 }
 
 // GetByID 根据ID查询
-func (r *AgentRepository) GetByID(id uint64) (*model.Agent, error) {
+func (r *AgentRepository) GetByID(id uint32) (*model.Agent, error) {
 
 	var agent model.Agent
 
@@ -64,30 +64,13 @@ func (r *AgentRepository) GetByID(id uint64) (*model.Agent, error) {
 	return &agent, nil
 }
 
-// GetByAgentID 根据AgentID查询
-func (r *AgentRepository) GetByAgentID(agentID uint32) (*model.Agent, error) {
+// GetByAppID 根据 AppID 查询代理
+func (r *AgentRepository) GetByAppID(appID string) (*model.Agent, error) {
 
 	var agent model.Agent
 
 	err := r.db.
-		Where("agent_id = ?", agentID).
-		First(&agent).
-		Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &agent, nil
-}
-
-// GetByCode 根据代理编码查询
-func (r *AgentRepository) GetByCode(code string) (*model.Agent, error) {
-
-	var agent model.Agent
-
-	err := r.db.
-		Where("code = ?", code).
+		Where("app_id = ?", appID).
 		First(&agent).
 		Error
 

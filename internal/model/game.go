@@ -20,7 +20,7 @@ const (
 
 // Game 游戏
 type Game struct {
-	ID uint `gorm:"column:id;primaryKey;autoIncrement"` // 主键ID
+	ID uint32 `gorm:"column:id;primaryKey;autoIncrement"` // 主键ID
 
 	Provider string `gorm:"column:provider"` // 游戏厂商
 	GameCode string `gorm:"column:game_code"` // 游戏标识
@@ -40,8 +40,8 @@ type Game struct {
 
 	Status int8 `gorm:"column:status"` // 状态：0禁用 1启用
 
-	CreateTime uint32 `gorm:"column:create_time"` // 创建时间
-	UpdateTime uint32 `gorm:"column:update_time"` // 更新时间
+	CreateTime int64 `gorm:"column:create_time"` // 创建时间
+	UpdateTime int64 `gorm:"column:update_time"` // 更新时间
 }
 
 // TableName 表名

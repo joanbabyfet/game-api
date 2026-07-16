@@ -10,11 +10,15 @@ import "errors"
 // 建议预留区间，方便以后扩充。
 
 const (
-	CmdAuthenticate uint16 = 1001
-    CmdBalance      uint16 = 1002
-    CmdBet          uint16 = 1003
-    CmdRollback     uint16 = 1004
-	CmdKick 		uint16 = 1005
+	// 保持该顺序 1000 User 2000 Wallet 3000 Slot 4000 Jackpot
+
+	CmdLogin 		uint16 = 1001
+	CmdKick 		uint16 = 1002
+
+    CmdBalance      uint16 = 2001
+    CmdSpin         uint16 = 2002
+    CmdRollback     uint16 = 2003
+
     CmdPing         uint16 = 9999
 	
 	// Response（可选）

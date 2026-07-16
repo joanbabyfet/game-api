@@ -2,3 +2,7 @@ app:
   name: provider-api
   port: 8080
   mode: release
+
+provider:
+  game_url: "https://game.cp.com/launcher"
+  file_url: https://static.cp.com

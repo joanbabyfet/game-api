@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"fmt"
 	"game-api/pkg"
 
 	"github.com/gin-gonic/gin"
@@ -15,13 +14,20 @@ func NewTestController() *TestController {
 }
 
 func (c *TestController) Index(ctx *gin.Context) {
-	token, _ := pkg.GenerateToken(
+	//当前还没有 Operator，先生成测试 Token
+	token, err := pkg.GenerateToken(
 		10002,
 		1,
 		"nick",
 	)
+	if err != nil {
+		pkg.HandleError(ctx, err)
+		return
+	}
 
-	fmt.Println(token)
+	pkg.Success(ctx, gin.H{
+		"token": token,
+	})
 
 	// client := skynet.New("127.0.0.1:8888")
 

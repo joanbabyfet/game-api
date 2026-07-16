@@ -59,8 +59,6 @@ func (*PingReq) Descriptor() ([]byte, []int) {
 
 type PingResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Msg           string                 `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -95,29 +93,14 @@ func (*PingResp) Descriptor() ([]byte, []int) {
 	return file_system_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PingResp) GetMsg() string {
-	if x != nil {
-		return x.Msg
-	}
-	return ""
-}
-
-func (x *PingResp) GetTimestamp() int64 {
-	if x != nil {
-		return x.Timestamp
-	}
-	return 0
-}
-
 var File_system_proto protoreflect.FileDescriptor
 
 const file_system_proto_rawDesc = "" +
 	"\n" +
 	"\fsystem.proto\x12\x06system\"\t\n" +
-	"\aPingReq\":\n" +
-	"\bPingResp\x12\x10\n" +
-	"\x03msg\x18\x01 \x01(\tR\x03msg\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestampB\x19Z\x17game-api/proto/systempbb\x06proto3"
+	"\aPingReq\"\n" +
+	"\n" +
+	"\bPingRespB\x19Z\x17game-api/proto/systempbb\x06proto3"
 
 var (
 	file_system_proto_rawDescOnce sync.Once

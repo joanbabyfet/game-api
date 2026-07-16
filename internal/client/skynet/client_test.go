@@ -49,7 +49,7 @@ func TestReadWritePacket(t *testing.T) {
 
 	want := &Packet{
 		Type:    PacketResponse,
-		CmdID:   CmdBet,
+		CmdID:   CmdSpin,
 		SeqID:   88,
 		Payload: []byte("protobuf-bytes"),
 	}

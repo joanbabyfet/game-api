@@ -21,30 +21,33 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type BetReq struct {
+type SpinReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Uid           uint64                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	AgentId       uint32                 `protobuf:"varint,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
-	GameId        uint32                 `protobuf:"varint,3,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	BetAmount     int64                  `protobuf:"varint,4,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
+	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	RoundId       string                 `protobuf:"bytes,3,opt,name=round_id,json=roundId,proto3" json:"round_id,omitempty"`
+	Uid           uint64                 `protobuf:"varint,4,opt,name=uid,proto3" json:"uid,omitempty"`
+	AgentId       uint32                 `protobuf:"varint,5,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	GameId        uint32                 `protobuf:"varint,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	BetAmount     int64                  `protobuf:"varint,7,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BetReq) Reset() {
-	*x = BetReq{}
+func (x *SpinReq) Reset() {
+	*x = SpinReq{}
 	mi := &file_slot_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BetReq) String() string {
+func (x *SpinReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BetReq) ProtoMessage() {}
+func (*SpinReq) ProtoMessage() {}
 
-func (x *BetReq) ProtoReflect() protoreflect.Message {
+func (x *SpinReq) ProtoReflect() protoreflect.Message {
 	mi := &file_slot_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,40 +59,61 @@ func (x *BetReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BetReq.ProtoReflect.Descriptor instead.
-func (*BetReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use SpinReq.ProtoReflect.Descriptor instead.
+func (*SpinReq) Descriptor() ([]byte, []int) {
 	return file_slot_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *BetReq) GetUid() uint64 {
+func (x *SpinReq) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *SpinReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *SpinReq) GetRoundId() string {
+	if x != nil {
+		return x.RoundId
+	}
+	return ""
+}
+
+func (x *SpinReq) GetUid() uint64 {
 	if x != nil {
 		return x.Uid
 	}
 	return 0
 }
 
-func (x *BetReq) GetAgentId() uint32 {
+func (x *SpinReq) GetAgentId() uint32 {
 	if x != nil {
 		return x.AgentId
 	}
 	return 0
 }
 
-func (x *BetReq) GetGameId() uint32 {
+func (x *SpinReq) GetGameId() uint32 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *BetReq) GetBetAmount() int64 {
+func (x *SpinReq) GetBetAmount() int64 {
 	if x != nil {
 		return x.BetAmount
 	}
 	return 0
 }
 
-type BetResp struct {
+type SpinResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Balance       int64                  `protobuf:"varint,2,opt,name=balance,proto3" json:"balance,omitempty"`
@@ -98,20 +122,20 @@ type BetResp struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BetResp) Reset() {
-	*x = BetResp{}
+func (x *SpinResp) Reset() {
+	*x = SpinResp{}
 	mi := &file_slot_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BetResp) String() string {
+func (x *SpinResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BetResp) ProtoMessage() {}
+func (*SpinResp) ProtoMessage() {}
 
-func (x *BetResp) ProtoReflect() protoreflect.Message {
+func (x *SpinResp) ProtoReflect() protoreflect.Message {
 	mi := &file_slot_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -123,26 +147,26 @@ func (x *BetResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BetResp.ProtoReflect.Descriptor instead.
-func (*BetResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use SpinResp.ProtoReflect.Descriptor instead.
+func (*SpinResp) Descriptor() ([]byte, []int) {
 	return file_slot_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *BetResp) GetOrderNo() string {
+func (x *SpinResp) GetOrderNo() string {
 	if x != nil {
 		return x.OrderNo
 	}
 	return ""
 }
 
-func (x *BetResp) GetBalance() int64 {
+func (x *SpinResp) GetBalance() int64 {
 	if x != nil {
 		return x.Balance
 	}
 	return 0
 }
 
-func (x *BetResp) GetWinAmount() int64 {
+func (x *SpinResp) GetWinAmount() int64 {
 	if x != nil {
 		return x.WinAmount
 	}
@@ -154,14 +178,18 @@ var File_slot_proto protoreflect.FileDescriptor
 const file_slot_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"slot.proto\x12\x04slot\"m\n" +
-	"\x06BetReq\x12\x10\n" +
-	"\x03uid\x18\x01 \x01(\x04R\x03uid\x12\x19\n" +
-	"\bagent_id\x18\x02 \x01(\rR\aagentId\x12\x17\n" +
-	"\agame_id\x18\x03 \x01(\rR\x06gameId\x12\x1d\n" +
+	"slot.proto\x12\x04slot\"\xc3\x01\n" +
+	"\aSpinReq\x12\x1d\n" +
 	"\n" +
-	"bet_amount\x18\x04 \x01(\x03R\tbetAmount\"]\n" +
-	"\aBetResp\x12\x19\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
+	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x19\n" +
+	"\bround_id\x18\x03 \x01(\tR\aroundId\x12\x10\n" +
+	"\x03uid\x18\x04 \x01(\x04R\x03uid\x12\x19\n" +
+	"\bagent_id\x18\x05 \x01(\rR\aagentId\x12\x17\n" +
+	"\agame_id\x18\x06 \x01(\rR\x06gameId\x12\x1d\n" +
+	"\n" +
+	"bet_amount\x18\a \x01(\x03R\tbetAmount\"^\n" +
+	"\bSpinResp\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x18\n" +
 	"\abalance\x18\x02 \x01(\x03R\abalance\x12\x1d\n" +
 	"\n" +
@@ -181,8 +209,8 @@ func file_slot_proto_rawDescGZIP() []byte {
 
 var file_slot_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_slot_proto_goTypes = []any{
-	(*BetReq)(nil),  // 0: slot.BetReq
-	(*BetResp)(nil), // 1: slot.BetResp
+	(*SpinReq)(nil),  // 0: slot.SpinReq
+	(*SpinResp)(nil), // 1: slot.SpinResp
 }
 var file_slot_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

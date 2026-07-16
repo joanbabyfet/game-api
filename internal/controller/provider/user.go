@@ -18,25 +18,6 @@ func NewUserController(service *service.UserService) *UserController {
 	}
 }
 
-// 登录认证
-func (c *UserController) Authenticate(ctx *gin.Context) {
-
-	var req provider.AuthReq
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		pkg.Error(ctx, pkg.INVALID_PARAM, err.Error())
-		return
-	}
-
-	resp, err := c.service.Authenticate(ctx.Request.Context(), &req)
-	if err != nil {
-		pkg.HandleError(ctx, err)
-		return
-	}
-
-	pkg.Success(ctx, resp)
-}
-
 // 踢某玩家 (skynet)
 func (c *UserController) Kick(ctx *gin.Context) {
 
@@ -47,10 +28,30 @@ func (c *UserController) Kick(ctx *gin.Context) {
         return
     }
 
-    if err := c.service.Kick(ctx.Request.Context(), &req); err != nil {
+    resp, err := c.service.Kick(ctx.Request.Context(), &req)
+	if err != nil {
 		pkg.HandleError(ctx, err)
 		return
 	}
 
-    pkg.Success(ctx, nil)
+    pkg.Success(ctx, resp)
+}
+
+// 登录创角
+func (c *UserController) Login(ctx *gin.Context) {
+
+	var req provider.LoginReq
+
+    if err := ctx.ShouldBindJSON(&req); err != nil {
+        pkg.Error(ctx, pkg.INVALID_PARAM, err.Error())
+        return
+    }
+
+    resp, err := c.service.Login(ctx.Request.Context(), &req)
+	if err != nil {
+		pkg.HandleError(ctx, err)
+		return
+	}
+
+    pkg.Success(ctx, resp)
 }

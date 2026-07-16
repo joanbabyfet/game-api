@@ -5,6 +5,7 @@ import (
 
 	"game-api/internal/adapter"
 	"game-api/internal/bootstrap"
+	"game-api/internal/client/operator"
 	provider "game-api/internal/controller/provider"
 	"game-api/internal/repository"
 	"game-api/internal/service"
@@ -14,6 +15,9 @@ func RegisterProvider(r *gin.Engine) {
 
     api := r.Group("/provider")
 	
+	// Operator Client
+	operatorClient := operator.New()
+
 	// Skynet Client
 	skynetClient := bootstrap.SkynetClient
 
@@ -21,32 +25,89 @@ func RegisterProvider(r *gin.Engine) {
 	userAdapter := adapter.NewUserAdapter(skynetClient)
 	walletAdapter := adapter.NewWalletAdapter(skynetClient)
 	slotAdapter := adapter.NewSlotAdapter(skynetClient)
+	systemAdapter := adapter.NewSystemAdapter(skynetClient)
 
-	//游戏
+	// Repository
+	agentRepo := repository.NewAgentRepository(bootstrap.DB)
+	agentGameRepo := repository.NewAgentGameRepository(bootstrap.DB)
 	gameRepo := repository.NewGameRepository(bootstrap.DB)
-	gameService := service.NewGameService(gameRepo, slotAdapter)
-	gameController := provider.NewGameController(gameService)
-
-	// 历史注单
 	gameOrderRepo := repository.NewGameOrderRepository(bootstrap.DB)
-	gameOrderService := service.NewGameOrderService(gameOrderRepo)
-	orderController := provider.NewOrderController(gameOrderService)
-
-	//钱包
-	walletRepo := repository.NewWalletRepository(bootstrap.DB)
-	walletService := service.NewWalletService(walletRepo, walletAdapter)
-	walletController := provider.NewWalletController(walletService)
-
-	// 玩家
 	userRepo := repository.NewUserRepository(bootstrap.DB)
-	userService := service.NewUserService(userRepo, walletRepo, userAdapter)
-	userController := provider.NewUserController(userService)
+	walletRepo := repository.NewWalletRepository(bootstrap.DB)
 
-    api.GET("/game/list", gameController.List)
-	api.GET("/history", orderController.History)
-	api.POST("/authenticate", userController.Authenticate)
+	// Service
+	authService := service.NewAuthService(agentRepo)
+	gameService := service.NewGameService(
+		gameRepo,
+		agentRepo,
+		userRepo,
+		agentGameRepo,
+		slotAdapter,
+		authService,
+	)
+	gameOrderService := service.NewGameOrderService(
+		gameOrderRepo,
+		gameRepo,
+		authService,
+	)
+	walletService := service.NewWalletService(
+		walletRepo,
+		agentRepo,
+		gameRepo,
+		walletAdapter,
+		slotAdapter,
+		authService,
+		operatorClient,
+	)
+	userService := service.NewUserService(
+		userRepo,
+		walletRepo,
+		gameRepo,
+		agentGameRepo,
+		userRepo,
+		userAdapter,
+		authService,
+	)
+	systemService := service.NewSystemService(
+		authService,
+		systemAdapter,
+	)
+	debugService := service.NewDebugService(
+		agentRepo,
+	)
+
+	// Controller
+	gameController := provider.NewGameController(
+		gameService,
+	)
+	orderController := provider.NewOrderController(
+		gameOrderService,
+	)
+	walletController := provider.NewWalletController(
+		walletService,
+	)
+	userController := provider.NewUserController(
+		userService,
+	)
+	systemController := provider.NewSystemController(
+		systemService,
+	)
+	debugController := provider.NewDebugController(
+		debugService,
+	)
+	
+	//单一钱包接口
+	api.POST("/player/login", userController.Login)
+	api.POST("/game_url", gameController.GetGameURL)
+	api.POST("/game_list", gameController.List)
 	api.POST("/player/kick", userController.Kick)
-	api.POST("/balance", walletController.Balance)
-	api.POST("/bet", gameController.Bet)
-	api.POST("/rollback", walletController.Rollback)
+	api.POST("/get_order_log", orderController.GetOrderLog)
+	api.POST("/ping", systemController.Ping)
+
+	//Cocos 
+	api.POST("/player/balance", walletController.Balance) //进入游戏、需要刷新余额时
+	api.POST("/spin", walletController.Spin) //每点击一次 Spin
+	
+	//测试用
+	api.POST("/debug/sign", debugController.Sign)
 }

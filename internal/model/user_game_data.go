@@ -20,7 +20,7 @@ type UserGameData struct {
 	BonusState datatypes.JSON `gorm:"column:bonus_state" json:"bonus_state"`
 
 	// 最后进入游戏时间
-	LastLoginTime uint32 `gorm:"column:last_login_time" json:"last_login_time"`
+	LastLoginTime int64 `gorm:"column:last_login_time" json:"last_login_time"`
 }
 
 // TableName 表名

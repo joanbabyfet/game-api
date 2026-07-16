@@ -21,15 +21,11 @@ func NewSystemAdapter(client *skynet.Client) *SystemAdapter {
 
 // Ping 测试与 Skynet 的连通性。
 func (a *SystemAdapter) Ping(ctx context.Context) (*systempb.PingResp, error) {
-	req := &systempb.PingReq{}
+	pbReq := &systempb.PingReq{}
+
 	resp := &systempb.PingResp{}
 
-	if err := a.client.Call(
-		ctx,
-		skynet.CmdPing,
-		req,
-		resp,
-	); err != nil {
+	if err := a.client.Call(ctx, skynet.CmdPing, pbReq, resp); err != nil {
 		return nil, err
 	}
 

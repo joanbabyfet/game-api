@@ -47,7 +47,7 @@ type FreeSpin struct {
 	Status int8 `gorm:"column:status" json:"status"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 
 	// 完成时间
 	FinishTime uint32 `gorm:"column:finish_time" json:"finish_time"`

@@ -86,7 +86,7 @@ func (r *GameRepository) GetByCode(code string) (*model.Game, error) {
 	var game model.Game
 
 	err := r.db.
-		Where("code = ?", code).
+		Where("game_code = ?", code).
 		First(&game).
 		Error
 
@@ -125,4 +125,27 @@ func (r *GameRepository) List(q GameQuery) ([]model.Game, error) {
 		Error
 
 	return games, err
+}
+
+// ListByIDs 根据ID查询游戏
+func (r *GameRepository) ListByIDs(ids []uint32) ([]model.Game, error) {
+
+	var list []model.Game
+
+	if len(ids) == 0 {
+		return list, nil
+	}
+
+	err := r.db.
+		Where("id IN ?", ids).
+		Where("status = ?", model.GameStatusEnable).
+		Order("sort ASC").
+		Find(&list).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
 }

@@ -22,13 +22,70 @@ type GameOrderQuery struct {
 	RoundID   string
 
 	UID     uint64
-	AgentID uint64
+	AgentID uint32
 	GameID  uint32
 
 	Status *int8
 
+	SettleStartTime uint32
+    SettleEndTime   uint32
+
 	Page     int
 	PageSize int
+}
+
+// List 注单列表
+func (r *GameOrderRepository) List(q GameOrderQuery) ([]model.GameOrder, error) {
+
+	var orders []model.GameOrder
+
+	db := r.db
+
+	if q.OrderNo != "" {
+		db = db.Where("order_no = ?", q.OrderNo)
+	}
+
+	if q.RoundID != "" {
+		db = db.Where("round_id = ?", q.RoundID)
+	}
+
+	if q.UID > 0 {
+		db = db.Where("uid = ?", q.UID)
+	}
+
+	if q.AgentID > 0 {
+		db = db.Where("agent_id = ?", q.AgentID)
+	}
+
+	if q.GameID > 0 {
+		db = db.Where("game_id = ?", q.GameID)
+	}
+
+	if q.Status != nil {
+		db = db.Where("status = ?", q.Status)
+	}
+
+	// 这里用结算时间查询，而不是下注时间
+	if q.SettleStartTime > 0 && q.SettleEndTime > 0 {
+		db = db.Where("settle_time BETWEEN ? AND ?", q.SettleStartTime, q.SettleEndTime)
+	} else if q.SettleStartTime > 0 {
+		db = db.Where("settle_time >= ?", q.SettleStartTime)
+	} else if q.SettleEndTime > 0 {
+		db = db.Where("settle_time <= ?", q.SettleEndTime)
+	}
+
+	page, pageSize := pkg.Page(q.Page, q.PageSize)
+
+	offset := (page - 1) * pageSize
+
+	err := db.
+		Order("id DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&orders).
+		Error
+
+	return orders, err
 }
 
 // Create 新增注单
@@ -110,51 +167,6 @@ func (r *GameOrderRepository) GetByRoundID(roundID string) ([]model.GameOrder, e
 
 	err := r.db.
 		Where("round_id = ?", roundID).
-		Find(&orders).
-		Error
-
-	return orders, err
-}
-
-// List 注单列表
-func (r *GameOrderRepository) List(q GameOrderQuery) ([]model.GameOrder, error) {
-
-	var orders []model.GameOrder
-
-	db := r.db
-
-	if q.OrderNo != "" {
-		db = db.Where("order_no = ?", q.OrderNo)
-	}
-
-	if q.RoundID != "" {
-		db = db.Where("round_id = ?", q.RoundID)
-	}
-
-	if q.UID > 0 {
-		db = db.Where("uid = ?", q.UID)
-	}
-
-	if q.AgentID > 0 {
-		db = db.Where("agent_id = ?", q.AgentID)
-	}
-
-	if q.GameID > 0 {
-		db = db.Where("game_id = ?", q.GameID)
-	}
-
-	if q.Status != nil {
-		db = db.Where("status = ?", q.Status)
-	}
-
-	page, pageSize := pkg.Page(q.Page, q.PageSize)
-
-	offset := (page - 1) * pageSize
-
-	err := db.
-		Order("id DESC").
-		Offset(offset).
-		Limit(pageSize).
 		Find(&orders).
 		Error
 

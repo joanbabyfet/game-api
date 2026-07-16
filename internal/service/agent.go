@@ -28,23 +28,13 @@ func (s *AgentService) Update(agent *model.Agent) error {
 }
 
 // Delete 删除代理
-func (s *AgentService) Delete(id uint64) error {
+func (s *AgentService) Delete(id uint32) error {
 	return s.repo.Delete(id)
 }
 
 // GetByID 根据ID查询
-func (s *AgentService) GetByID(id uint64) (*model.Agent, error) {
+func (s *AgentService) GetByID(id uint32) (*model.Agent, error) {
 	return s.repo.GetByID(id)
-}
-
-// GetByAgentID 根据代理ID查询
-func (s *AgentService) GetByAgentID(agentID uint32) (*model.Agent, error) {
-	return s.repo.GetByAgentID(agentID)
-}
-
-// GetByCode 根据代理编码查询
-func (s *AgentService) GetByCode(code string) (*model.Agent, error) {
-	return s.repo.GetByCode(code)
 }
 
 // List 代理列表

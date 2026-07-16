@@ -14,18 +14,18 @@ var JWTSecret = []byte("your-secret-key")
 type JWTClaims struct {
 	UID      uint64 `json:"uid"`
 	AgentID  uint32 `json:"agent_id"`
-	Username string `json:"username"`
+	PlayerID string `json:"player_id"` //运营商玩家标识 对应 username
 
 	jwt.RegisteredClaims
 }
 
 // GenerateToken 生成JWT
-func GenerateToken(uid uint64, agentID uint32, username string) (string, error) {
+func GenerateToken(uid uint64, agentID uint32, player_id string) (string, error) {
 
 	claims := JWTClaims{
 		UID:      uid,
 		AgentID:  agentID,
-		Username: username,
+		PlayerID: player_id,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

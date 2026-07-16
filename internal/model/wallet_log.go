@@ -30,7 +30,7 @@ type WalletLog struct {
 	RefOrderNo string `gorm:"column:ref_order_no;size:64" json:"ref_order_no"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 }
 
 // TableName 表名

@@ -1,5 +1,17 @@
 package model
 
+const (
+	// AgentGame Status
+	AgentGameStatusDisable int8 = 0 // 禁用
+	AgentGameStatusEnable  int8 = 1 // 启用
+)
+
+const (
+	// AgentGame Risk
+	AgentGameRiskDisable int8 = 0 // 关闭
+	AgentGameRiskEnable  int8 = 1 // 开启
+)
+
 // AgentGame 代理游戏配置
 type AgentGame struct {
 	// 主键
@@ -36,10 +48,10 @@ type AgentGame struct {
 	Status int8 `gorm:"column:status" json:"status"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 
 	// 修改时间
-	UpdateTime uint32 `gorm:"column:update_time" json:"update_time"`
+	UpdateTime int64 `gorm:"column:update_time" json:"update_time"`
 }
 
 // TableName 表名

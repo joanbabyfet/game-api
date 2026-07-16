@@ -71,13 +71,13 @@ type GameOrder struct {
 	Status int8 `gorm:"column:status" json:"status"`
 
 	// 结算时间
-	SettleTime uint32 `gorm:"column:settle_time" json:"settle_time"`
+	SettleTime int64 `gorm:"column:settle_time" json:"settle_time"`
 
 	// 回滚时间
-	RollbackTime uint32 `gorm:"column:rollback_time" json:"rollback_time"`
+	RollbackTime int64 `gorm:"column:rollback_time" json:"rollback_time"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 }
 
 // TableName 表名

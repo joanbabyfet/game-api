@@ -72,14 +72,15 @@ func (r *UserRepository) GetByUID(uid uint64) (*model.User, error) {
 	return &user, nil
 }
 
-// GetByUsername 根据用户名查询
-func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
+// GetByAgentAndUsername 根据代理ID和用户名查询
+func (r *UserRepository) GetByAgentAndUsername(agentID uint32, username string) (*model.User, error) {
 
 	var user model.User
 
 	err := r.db.
-		Where("username = ?", username).
-		First(&user).Error
+		Where("agent_id = ? AND username = ?", agentID, username).
+		First(&user).
+		Error
 
 	if err != nil {
 		return nil, err

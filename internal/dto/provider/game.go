@@ -1,25 +1,25 @@
 package provider
 
 type GameListReq struct {
-	Provider string `form:"provider" binding:"required"`
+	BaseReq
 }
 
+// GameListResp 游戏列表
 type GameListResp struct {
-	ID       uint64 `json:"id"`
-	GameCode string `json:"game_code"`
-	Name 	 string `json:"name"`
-	Provider string `json:"provider"`
-	Status   int8   `json:"status"`
-	Icon     string `json:"icon"`
+	GameCode string `json:"game_code"` // 游戏标识
+	GameName string `json:"game_name"` // 游戏名称
+	Provider string `json:"provider"`  // 游戏厂商
+	Icon     string `json:"icon"`      // 游戏图标
 }
 
-type BetReq struct {
-    Token   string `json:"token"`
-    RoundID string `json:"round_id"`
-	GameID  uint32 `json:"game_id"`
-    BetAmount int64  `json:"bet_amount"`
+type GameURLReq struct {
+	BaseReq
+
+	GameCode	string `json:"game_code" form:"game_code" binding:"required"`
+	PlayerID	string `json:"player_id" form:"player_id" binding:"required"`
+	Lang  		string `json:"lang" form:"lang" binding:"required"`
 }
 
-type BetResp struct {
-    Balance int64 `json:"balance"`
+type GameURLResp struct {
+	URL      string `json:"url"`
 }

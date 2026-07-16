@@ -22,11 +22,11 @@ type User struct {
 	// 状态：0=禁用 1=启用
 	Status int8 `gorm:"column:status" json:"status"`
 	// 最后登录时间
-	LastLoginTime uint32 `gorm:"column:last_login_time" json:"last_login_time"`
+	LastLoginTime int64 `gorm:"column:last_login_time" json:"last_login_time"`
 	// 创建时间（Unix Timestamp）
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 	// 修改时间（Unix Timestamp）
-	UpdateTime uint32 `gorm:"column:update_time" json:"update_time"`
+	UpdateTime int64 `gorm:"column:update_time" json:"update_time"`
 }
 
 // TableName 指定表名

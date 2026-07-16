@@ -14,13 +14,14 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Log      LogConfig      `mapstructure:"log"`
 	Provider ProviderConfig `mapstructure:"provider"`
-	Admin    AdminConfig    `mapstructure:"admin"`
-	Worker   WorkerConfig   `mapstructure:"worker"`
+	Cron     CronConfig     `mapstructure:"cron"`
 	Skynet 	 SkynetConfig 	`mapstructure:"skynet"`
 }
 
 type AppConfig struct {
-	Env string `mapstructure:"env"`
+	Name string `mapstructure:"name"`
+	Port int    `mapstructure:"port"`
+	Mode string `mapstructure:"mode"`
 }
 
 type MySQLConfig struct {
@@ -45,15 +46,8 @@ type LogConfig struct {
 }
 
 type ProviderConfig struct {
-	Port int `mapstructure:"port"`
-}
-
-type AdminConfig struct {
-	Port int `mapstructure:"port"`
-}
-
-type WorkerConfig struct {
-	Cron CronConfig `mapstructure:"cron"`
+	GameURL string `mapstructure:"game_url"`
+	FileURL string `mapstructure:"file_url"`
 }
 
 type CronConfig struct {

@@ -18,34 +18,8 @@ func NewUserAdapter(client *skynet.Client) *UserAdapter {
 	}
 }
 
-// Authenticate 调用 Skynet 用户认证。
-func (a *UserAdapter) Authenticate(
-	ctx context.Context,
-	uid uint64,
-    agentID uint32,
-    username string,
-) (*userpb.AuthenticateResp, error) {
-
-	pbReq := &userpb.AuthenticateReq{
-		Uid:      uid,
-		AgentId:  agentID,
-		Username: username,
-	}
-
-	resp := new(userpb.AuthenticateResp)
-
-	if err := a.client.Call(ctx, skynet.CmdAuthenticate, pbReq, resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 // Kick 调用 Skynet 踢玩家。
-func (a *UserAdapter) Kick(
-	ctx context.Context,
-	uid uint64,
-) (*userpb.KickResp, error) {
+func (a *UserAdapter) Kick(ctx context.Context, uid uint64) (*userpb.KickResp, error) {
 
 	pbReq := &userpb.KickReq{
 		Uid: uid,
@@ -54,6 +28,22 @@ func (a *UserAdapter) Kick(
 	resp := new(userpb.KickResp)
 
 	if err := a.client.Call(ctx, skynet.CmdKick, pbReq, resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Login 调用 Skynet 玩家上线
+func (a *UserAdapter) Login(ctx context.Context, uid uint64) (*userpb.LoginResp, error) {
+
+	pbReq := &userpb.LoginReq{
+		Uid: uid,
+	}
+
+	resp := new(userpb.LoginResp)
+
+	if err := a.client.Call(ctx, skynet.CmdLogin, pbReq, resp); err != nil {
 		return nil, err
 	}
 

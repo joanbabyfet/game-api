@@ -21,10 +21,10 @@ type JackpotPool struct {
 	Grand uint64 `gorm:"column:grand" json:"grand"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 
 	// 修改时间
-	UpdateTime uint32 `gorm:"column:update_time" json:"update_time"`
+	UpdateTime int64 `gorm:"column:update_time" json:"update_time"`
 }
 
 // TableName 表名

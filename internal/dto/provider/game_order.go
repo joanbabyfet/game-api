@@ -1,11 +1,9 @@
 package provider
 
 type GameOrderListReq struct {
-	Page      int `form:"page"`
-	PageSize  int `form:"page_size"`
-
-	OrderNo   string `form:"order_no"`
-	RoundID   string `form:"round_id"`
+	AppID     string `json:"app_id" binding:"required"`
+	Timestamp int64  `json:"timestamp" binding:"required"`
+	Sign      string `json:"sign" binding:"required"`
 
 	StartTime uint32 `form:"start_time"`
 	EndTime   uint32 `form:"end_time"`
@@ -22,5 +20,5 @@ type GameOrderListResp struct {
 
 	Status int8 `json:"status"`
 
-	CreateTime uint32 `json:"create_time"`
+	CreateTime int64 `json:"create_time"`
 }

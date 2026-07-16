@@ -1,26 +1,25 @@
 package provider
 
-// AuthReq 登录认证
-type AuthReq struct {
-	Token string `json:"token" binding:"required"` // JWT Token
-}
-
-// Service -> Adapter (内部dto)
-type AuthenticateReq struct {
-    UID      uint64
-    AgentID  uint32
-    Username string
-}
-
-type AuthResp struct {
-	UID      uint64 `json:"uid"`
-	AgentID  uint32 `json:"agent_id"`
-	Username string `json:"username"`
-	Balance  uint64  `json:"balance"`
-	Currency string `json:"currency"`
-}
-
 // KickReq 踢玩家请求
 type KickReq struct {
-	UID uint64 `json:"uid" binding:"required" validate:"required"`
+	BaseReq
+	
+	GameCode 	string `json:"game_code" form:"game_code" binding:"required"` // 遊戲ID
+	PlayerID	string `json:"player_id" form:"player_id" binding:"required"`     // 玩家UID
+}
+
+type KickResp struct {
+}
+
+
+//登录
+type LoginReq struct {
+	BaseReq
+
+	GameCode	string `json:"game_code" form:"game_code" binding:"required"`
+	PlayerID	string `json:"player_id" form:"player_id" binding:"required"` //运营商用户标识
+	//Nickname	string `json:"nickname" form:"nickname"` //运营商用户昵称(选填)
+}
+
+type LoginResp struct {
 }

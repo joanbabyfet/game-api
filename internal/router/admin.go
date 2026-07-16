@@ -20,12 +20,27 @@ func RegisterAdmin(r *gin.Engine) {
 	// Adapter
 	slotAdapter := adapter.NewSlotAdapter(skynetClient)
 
-	//游戏
+	// Repository
+	agentRepo := repository.NewAgentRepository(bootstrap.DB)
 	gameRepo := repository.NewGameRepository(bootstrap.DB)
-	gameService := service.NewGameService(gameRepo, slotAdapter)
-	gameController := admin.NewGameController(gameService)
+	userRepo := repository.NewUserRepository(bootstrap.DB)
+	agentGameRepo := repository.NewAgentGameRepository(bootstrap.DB)
 
-	//测试用
+	// Service
+	authService := service.NewAuthService(agentRepo)
+	gameService := service.NewGameService(
+		gameRepo,
+		agentRepo,
+		userRepo,
+		agentGameRepo,
+		slotAdapter,
+		authService,
+	)
+
+	// Controller
+	gameController := admin.NewGameController(
+		gameService,
+	)
 	testController := admin.NewTestController()
 
     api.GET("/game/list", gameController.List)

@@ -1,0 +1,4 @@
+app:
+  name: mock-operator
+  port: 8082
+  mode: release

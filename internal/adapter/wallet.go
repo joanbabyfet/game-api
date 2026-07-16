@@ -20,10 +20,7 @@ func NewWalletAdapter(client *skynet.Client) *WalletAdapter {
 }
 
 // Balance 查询余额
-func (a *WalletAdapter) Balance(
-	ctx context.Context,
-	uid uint64,
-) (*walletpb.BalanceResp, error) {
+func (a *WalletAdapter) Balance(ctx context.Context, uid uint64) (*walletpb.BalanceResp, error) {
 
 	pbReq := &walletpb.BalanceReq{
 		Uid: uid,
@@ -39,10 +36,7 @@ func (a *WalletAdapter) Balance(
 }
 
 // Rollback 注单回滚
-func (a *WalletAdapter) Rollback(
-	ctx context.Context,
-	req *walletpb.RollbackReq,
-) (*walletpb.RollbackResp, error) {
+func (a *WalletAdapter) Rollback(ctx context.Context, req *walletpb.RollbackReq) (*walletpb.RollbackResp, error) {
 
 	resp := new(walletpb.RollbackResp)
 

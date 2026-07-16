@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"game-api/internal/config"
 	"game-api/internal/middleware"
+	"game-api/pkg"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,6 +38,12 @@ func New(appConfig string) *App {
 
     // 初始化 Skynet Client
 	if err := InitSkynet(); err != nil {
+        panic(err)
+    }
+
+    //初始化雪花算法 这里 workerID 先用固定值 1
+    err := pkg.InitSnowflake(1)
+    if err != nil {
         panic(err)
     }
 

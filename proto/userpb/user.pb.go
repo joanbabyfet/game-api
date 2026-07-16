@@ -21,30 +21,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type AuthenticateReq struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// JWT 解析后的信息
-	Uid           uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	AgentId       uint32 `protobuf:"varint,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
-	Username      string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+type LoginReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uid           uint64                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AuthenticateReq) Reset() {
-	*x = AuthenticateReq{}
+func (x *LoginReq) Reset() {
+	*x = LoginReq{}
 	mi := &file_user_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AuthenticateReq) String() string {
+func (x *LoginReq) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AuthenticateReq) ProtoMessage() {}
+func (*LoginReq) ProtoMessage() {}
 
-func (x *AuthenticateReq) ProtoReflect() protoreflect.Message {
+func (x *LoginReq) ProtoReflect() protoreflect.Message {
 	mi := &file_user_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,58 +53,38 @@ func (x *AuthenticateReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthenticateReq.ProtoReflect.Descriptor instead.
-func (*AuthenticateReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use LoginReq.ProtoReflect.Descriptor instead.
+func (*LoginReq) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AuthenticateReq) GetUid() uint64 {
+func (x *LoginReq) GetUid() uint64 {
 	if x != nil {
 		return x.Uid
 	}
 	return 0
 }
 
-func (x *AuthenticateReq) GetAgentId() uint32 {
-	if x != nil {
-		return x.AgentId
-	}
-	return 0
-}
-
-func (x *AuthenticateReq) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-type AuthenticateResp struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Uid      uint64                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	AgentId  uint32                 `protobuf:"varint,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
-	Username string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
-	// 钱包
-	Balance       uint64 `protobuf:"varint,4,opt,name=balance,proto3" json:"balance,omitempty"`
-	Currency      string `protobuf:"bytes,5,opt,name=currency,proto3" json:"currency,omitempty"`
+type LoginResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AuthenticateResp) Reset() {
-	*x = AuthenticateResp{}
+func (x *LoginResp) Reset() {
+	*x = LoginResp{}
 	mi := &file_user_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AuthenticateResp) String() string {
+func (x *LoginResp) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AuthenticateResp) ProtoMessage() {}
+func (*LoginResp) ProtoMessage() {}
 
-func (x *AuthenticateResp) ProtoReflect() protoreflect.Message {
+func (x *LoginResp) ProtoReflect() protoreflect.Message {
 	mi := &file_user_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -119,44 +96,9 @@ func (x *AuthenticateResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthenticateResp.ProtoReflect.Descriptor instead.
-func (*AuthenticateResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use LoginResp.ProtoReflect.Descriptor instead.
+func (*LoginResp) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *AuthenticateResp) GetUid() uint64 {
-	if x != nil {
-		return x.Uid
-	}
-	return 0
-}
-
-func (x *AuthenticateResp) GetAgentId() uint32 {
-	if x != nil {
-		return x.AgentId
-	}
-	return 0
-}
-
-func (x *AuthenticateResp) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *AuthenticateResp) GetBalance() uint64 {
-	if x != nil {
-		return x.Balance
-	}
-	return 0
-}
-
-func (x *AuthenticateResp) GetCurrency() string {
-	if x != nil {
-		return x.Currency
-	}
-	return ""
 }
 
 type KickReq struct {
@@ -244,17 +186,10 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x04user\"Z\n" +
-	"\x0fAuthenticateReq\x12\x10\n" +
-	"\x03uid\x18\x01 \x01(\x04R\x03uid\x12\x19\n" +
-	"\bagent_id\x18\x02 \x01(\rR\aagentId\x12\x1a\n" +
-	"\busername\x18\x03 \x01(\tR\busername\"\x91\x01\n" +
-	"\x10AuthenticateResp\x12\x10\n" +
-	"\x03uid\x18\x01 \x01(\x04R\x03uid\x12\x19\n" +
-	"\bagent_id\x18\x02 \x01(\rR\aagentId\x12\x1a\n" +
-	"\busername\x18\x03 \x01(\tR\busername\x12\x18\n" +
-	"\abalance\x18\x04 \x01(\x04R\abalance\x12\x1a\n" +
-	"\bcurrency\x18\x05 \x01(\tR\bcurrency\"\x1b\n" +
+	"user.proto\x12\x04user\"\x1c\n" +
+	"\bLoginReq\x12\x10\n" +
+	"\x03uid\x18\x01 \x01(\x04R\x03uid\"\v\n" +
+	"\tLoginResp\"\x1b\n" +
 	"\aKickReq\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\x04R\x03uid\"\n" +
 	"\n" +
@@ -274,10 +209,10 @@ func file_user_proto_rawDescGZIP() []byte {
 
 var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_user_proto_goTypes = []any{
-	(*AuthenticateReq)(nil),  // 0: user.AuthenticateReq
-	(*AuthenticateResp)(nil), // 1: user.AuthenticateResp
-	(*KickReq)(nil),          // 2: user.KickReq
-	(*KickResp)(nil),         // 3: user.KickResp
+	(*LoginReq)(nil),  // 0: user.LoginReq
+	(*LoginResp)(nil), // 1: user.LoginResp
+	(*KickReq)(nil),   // 2: user.KickReq
+	(*KickResp)(nil),  // 3: user.KickResp
 }
 var file_user_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

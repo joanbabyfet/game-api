@@ -26,11 +26,14 @@ type Agent struct {
 	// 时区
 	Timezone string `gorm:"column:timezone;size:50" json:"timezone"`
 
-	// API Key
-	APIKey string `gorm:"column:api_key;size:64" json:"api_key"`
+	// app id 运营商标识
+	AppID string `gorm:"column:app_id;size:64" json:"app_id"`
 
 	// API Secret
 	SecretKey string `gorm:"column:secret_key;size:128" json:"secret_key"`
+
+	// 运营商接口URL
+	OperatorURL string `gorm:"column:operator_url;size:255" json:"operator_url"`
 
 	// 回调地址
 	CallbackURL string `gorm:"column:callback_url;size:255" json:"callback_url"`
@@ -42,10 +45,10 @@ type Agent struct {
 	Remark string `gorm:"column:remark;size:255" json:"remark"`
 
 	// 创建时间
-	CreateTime uint32 `gorm:"column:create_time" json:"create_time"`
+	CreateTime int64 `gorm:"column:create_time" json:"create_time"`
 
 	// 修改时间
-	UpdateTime uint32 `gorm:"column:update_time" json:"update_time"`
+	UpdateTime int64 `gorm:"column:update_time" json:"update_time"`
 }
 
 // TableName 表名

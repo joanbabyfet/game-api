@@ -19,15 +19,12 @@ func NewSlotAdapter(client *skynet.Client) *SlotAdapter {
 	}
 }
 
-// 下注
-func (a *SlotAdapter) Bet(
-	ctx context.Context,
-	req *slotpb.BetReq,
-) (*slotpb.BetResp, error) {
+// 旋通旋转
+func (a *SlotAdapter) Spin(ctx context.Context, req *slotpb.SpinReq) (*slotpb.SpinResp, error) {
 
-	resp := new(slotpb.BetResp)
+	resp := new(slotpb.SpinResp)
 
-	if err := a.client.Call(ctx, skynet.CmdBet, req, resp); err != nil {
+	if err := a.client.Call(ctx, skynet.CmdSpin, req, resp); err != nil {
 		return nil, err
 	}
 

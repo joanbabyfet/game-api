@@ -1,11 +1,25 @@
 package provider
 
+//查玩家余額
 type BalanceReq struct {
-	Token string `json:"token" binding:"required"`
+	Token string `json:"token" binding:"required"` // JWT Token
 }
 
 type BalanceResp struct {
-	Balance uint64 `json:"balance"`
+	Balance float64 `json:"balance"`
+	Currency string `json:"currency"`
+}
+
+//Spin (玩家点击 Spin 时调用)
+type SpinReq struct {
+	Token 		string `json:"token" binding:"required"` // JWT Token
+	
+	GameCode	string `json:"game_code" binding:"required"`
+	BetAmount	float64 `json:"bet_amount" binding:"required"`
+}
+
+type SpinResp struct {
+    Balance float64 `json:"balance"`
 	Currency string `json:"currency"`
 }
 
