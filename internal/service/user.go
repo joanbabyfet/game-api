@@ -167,6 +167,7 @@ func (s *UserService) Login(ctx context.Context, req *provider.LoginReq) (*provi
 			AgentID:       agent.ID,
 			Username:      req.PlayerID,
 			Nickname:      req.PlayerID,
+			Currency:      agent.Currency, //第1次创建玩家时确定，以后不会改变
 			Status:        model.UserStatusEnable,
 			LastLoginTime: now,
 			CreateTime:    now,

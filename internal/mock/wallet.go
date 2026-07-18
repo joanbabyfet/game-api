@@ -13,9 +13,7 @@ type Wallet struct {
 func NewWallet() *Wallet {
 	return &Wallet{
 		balances: map[string]float64{
-			"chris1": 1000.00,
-			"chris2": 1000.00,
-			"chris3": 1000.00,
+			"chris1": 5000.00,
 		},
 	}
 }

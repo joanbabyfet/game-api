@@ -18,6 +18,7 @@ const (
     CmdBalance      uint16 = 2001
     CmdSpin         uint16 = 2002
     CmdRollback     uint16 = 2003
+	CmdCancel     	uint16 = 2004
 
     CmdPing         uint16 = 9999
 	

@@ -46,6 +46,9 @@ type GameOrder struct {
 	// 结算后余额
 	BalanceAfter int64 `gorm:"column:balance_after" json:"balance_after"`
 
+	// 默认币种
+	Currency string `gorm:"column:currency;size:10" json:"currency"`
+
 	// 开奖结果
 	Reels datatypes.JSON `gorm:"column:reels" json:"reels"`
 

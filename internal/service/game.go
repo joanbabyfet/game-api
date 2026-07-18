@@ -163,6 +163,7 @@ func (s *GameService) GetGameURL(ctx context.Context, req *provider.GameURLReq) 
 		user.UID,
 		agent.ID,
 		user.Username,
+		user.Currency,
 	)
 	if err != nil {
 		return nil, err

@@ -46,3 +46,15 @@ func (a *WalletAdapter) Rollback(ctx context.Context, req *walletpb.RollbackReq)
 
 	return resp, nil
 }
+
+// Cancel 未结算注单（PROCESSING -> ROLLBACK）
+func (a *WalletAdapter) Cancel(ctx context.Context, req *walletpb.CancelReq) (*walletpb.CancelResp, error) {
+
+	resp := new(walletpb.CancelResp)
+
+	if err := a.client.Call(ctx, skynet.CmdCancel, req, resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

@@ -142,6 +142,7 @@ func (s *GameOrderService) GetOrderLog(ctx context.Context, req *provider.OrderL
 			GameCode:   gameMap[order.GameID],
 			BetAmount:  pkg.ToAmount(int64(order.BetAmount)),
 			WinAmount:  pkg.ToAmount(int64(order.WinAmount)),
+			Currency:   order.Currency,
 			Status:     order.Status,
 			SettleTime: order.SettleTime,
 			CreateTime: order.CreateTime,

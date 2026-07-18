@@ -5,6 +5,7 @@ import (
 	mock "game-api/internal/dto/mock"
 	"game-api/internal/model"
 	"game-api/pkg"
+	"log"
 )
 
 //查玩家余额
@@ -15,8 +16,8 @@ func (c *Client) Balance(ctx context.Context, baseURL string, agent *model.Agent
 	sign := pkg.GenerateSign(
 		pkg.BuildSignData(map[string]any{
 			"app_id":    agent.AppID,
-			"player_id": playerID,
 			"timestamp": now,
+			"player_id": playerID,
 		}),
 		agent.SecretKey,
 	)
@@ -40,19 +41,19 @@ func (c *Client) Balance(ctx context.Context, baseURL string, agent *model.Agent
 }
 
 //下注(扣钱)
-func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, roundID string, gameCode string, amount float64) (*mock.BetResp, error) {
+func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, roundID string, gameCode string, betAmount float64) (*mock.BetResp, error) {
 
 	// 组装 sign
 	now := pkg.Timestamp()
 	sign := pkg.GenerateSign(
 		pkg.BuildSignData(map[string]any{
 			"app_id":    agent.AppID,
+			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
 			"round_id":  roundID,
 			"game_code": gameCode,
-			"amount":    amount,
-			"timestamp": now,
+			"bet_amount": betAmount,
 		}),
 		agent.SecretKey,
 	)
@@ -67,15 +68,21 @@ func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, pl
 		OrderNo:  orderNo,
 		RoundID:  roundID,
 		GameCode: gameCode,
-		BetAmount:   amount, //下注金额
-		BetTime: 	now, //下注时间
+		BetAmount:  betAmount, //下注金额
 	}
+
+	log.Printf("====== Operator Bet Request ======")
+    log.Printf("URL: %s", baseURL+"/bet")
+    log.Printf("Request: %+v", req)
 
 	var resp mock.BetResp
 	// 调用 Operator API
 	if err := c.post(ctx, baseURL+"/bet", req, &resp); err != nil {
 		return nil, err
 	}
+
+	log.Printf("====== Operator Bet Response ======")
+    log.Printf("Response: %+v", resp)
 
 	return &resp, nil
 }
@@ -88,12 +95,12 @@ func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent,
 	sign := pkg.GenerateSign(
 		pkg.BuildSignData(map[string]any{
 			"app_id":    agent.AppID,
+			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
 			"round_id":  roundID,
 			"game_code": gameCode,
-			"amount":    winAmount,
-			"timestamp": now,
+			"win_amount": winAmount,
 		}),
 		agent.SecretKey,
 	)
@@ -111,12 +118,19 @@ func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent,
 		WinAmount: winAmount,
 	}
 
+	log.Printf("====== Operator Settle Request ======")
+    log.Printf("URL: %s", baseURL+"/settle")
+    log.Printf("Request: %+v", req)
+
 	var resp mock.SettleResp
 
 	// 调用 Operator API
 	if err := c.post(ctx, baseURL+"/settle", req, &resp); err != nil {
 		return nil, err
 	}
+
+	log.Printf("====== Operator Settle Response ======")
+    log.Printf("Response: %+v", resp)
 
 	return &resp, nil
 }
@@ -129,12 +143,12 @@ func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agen
 	sign := pkg.GenerateSign(
 		pkg.BuildSignData(map[string]any{
 			"app_id":    agent.AppID,
+			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
 			"round_id":  roundID,
 			"game_code": gameCode,
 			"bet_amount": betAmount,
-			"timestamp": now,
 		}),
 		agent.SecretKey,
 	)
@@ -149,7 +163,12 @@ func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agen
 		OrderNo:  orderNo,
 		RoundID:  roundID,
 		GameCode: gameCode,
+		BetAmount:  betAmount, //下注金额
 	}
+
+	log.Printf("====== Operator Rollback Request ======")
+    log.Printf("URL: %s", baseURL+"/rollback")
+    log.Printf("Request: %+v", req)
 
 	var resp mock.RollbackResp
 
@@ -157,6 +176,9 @@ func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agen
 	if err := c.post(ctx, baseURL+"/rollback", req, &resp); err != nil {
 		return nil, err
 	}
+
+	log.Printf("====== Operator Rollback Response ======")
+    log.Printf("Response: %+v", resp)
 
 	return &resp, nil
 }

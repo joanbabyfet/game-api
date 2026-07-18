@@ -9,6 +9,8 @@ import (
 	"game-api/internal/repository"
 	"game-api/pkg"
 	"game-api/proto/slotpb"
+	"game-api/proto/walletpb"
+	"log"
 
 	"github.com/google/uuid"
 )
@@ -17,6 +19,7 @@ type WalletService struct {
 	repo *repository.WalletRepository
 	agentRepo *repository.AgentRepository
 	gameRepo *repository.GameRepository
+	userRepo *repository.UserRepository
 	adapter *adapter.WalletAdapter
 	slotAdapter *adapter.SlotAdapter
 	authService *AuthService
@@ -27,16 +30,17 @@ func NewWalletService(
 	repo *repository.WalletRepository,
 	agentRepo *repository.AgentRepository,
 	gameRepo *repository.GameRepository,
+	userRepo *repository.UserRepository,
 	adapter *adapter.WalletAdapter,
 	slotAdapter *adapter.SlotAdapter,
 	authService *AuthService,
-	
 	operatorClient *operator.Client,
 ) *WalletService {
 	return &WalletService{
 		repo: repo,
 		agentRepo: agentRepo,
 		gameRepo: gameRepo,
+		userRepo: userRepo,
 		adapter: adapter,
 		slotAdapter: slotAdapter,
 		authService: authService,
@@ -93,7 +97,7 @@ func (s *WalletService) Balance(ctx context.Context, req *provider.BalanceReq) (
 	// DTO 轉換
 	return &provider.BalanceResp{
 		Balance: resp.Balance,
-		Currency: "USD",
+		Currency: resp.Currency,
 	}, nil
 }
 
@@ -103,12 +107,14 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	// 解析 JWT
 	claims, err := pkg.ParseToken(req.Token)
 	if err != nil {
+		log.Printf("ParseToken error: %+v", err)
 		return nil, pkg.ErrUnauthorized
 	}
 
 	// 查询游戏
 	game, err := s.gameRepo.GetByCode(req.GameCode)
 	if err != nil {
+		log.Printf("GetByCode error: %+v", err)
 		return nil, pkg.ErrGameNotFound
 	}
 
@@ -135,10 +141,11 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		req.BetAmount,
 	)
 	if err != nil {
+		log.Printf("Bet error: %+v", err)
 		return nil, err
 	}
 
-	// 调用 Skynet
+	// 2. 调用 Skynet
 	pbReq := &slotpb.SpinReq{
 		RequestId: requestID,
 		OrderNo:   orderNo,
@@ -147,13 +154,25 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		AgentId:   claims.AgentID,
 		GameId:    game.ID,
 		BetAmount: pkg.ToMoney(req.BetAmount),
+		Currency:  claims.Currency,
+		DebugFail: req.DebugFail, //测试取消下注用
 	}
+
+	// log.Printf("========== Skynet Spin Request ==========")
+	log.Printf("RequestID : %s", pbReq.RequestId)
+	log.Printf("OrderNo   : %s", pbReq.OrderNo)
+	log.Printf("RoundID   : %s", pbReq.RoundId)
+	log.Printf("UID       : %d", pbReq.Uid)
+	log.Printf("AgentID   : %d", pbReq.AgentId)
+	log.Printf("GameID    : %d", pbReq.GameId)
+	log.Printf("BetAmount : %d", pbReq.BetAmount)
 
 	spinResp, err := s.slotAdapter.Spin(ctx, pbReq)
 	if err != nil {
-		
+		log.Printf("Spin error: %+v", err)
+
 		// Skynet 失败，回滚扣款
-		_, _ = s.operatorClient.Rollback(
+		_, rbErr := s.operatorClient.Rollback(
 			ctx,
 			agent.OperatorURL,
 			agent,
@@ -163,11 +182,48 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 			game.GameCode,
 			req.BetAmount,
 		)
+		if rbErr != nil {
+			log.Printf(
+				"Operator rollback failed, order=%s round=%s player=%s err=%v",
+				orderNo,
+				roundID,
+				claims.PlayerID,
+				rbErr,
+			)
+
+			// 标记订单 WAIT_ROLLBACK
+			// Worker 后续重试
+		}
+
+		// Operator 已成功回滚
+		_, skynetErr := s.adapter.Cancel(ctx, &walletpb.CancelReq{
+			Uid: 		claims.UID,
+			AgentId:   	claims.AgentID,
+			OrderNo: 	orderNo,
+			RequestId:	requestID,
+		})
+		if skynetErr != nil {
+			log.Printf(
+				"Skynet rollback failed, request=%s order=%s round=%s player=%s err=%v",
+				requestID,
+				orderNo,
+				roundID,
+				claims.PlayerID,
+				skynetErr,
+			)
+
+			// 标记订单 WAIT_SKYNET_ROLLBACK
+			// Worker 后续重试
+		}
 
 		return nil, err
 	}
 
-	// 4. Operator 结算
+	log.Printf("========== Skynet Spin Response ==========")
+	log.Printf("WinAmount : %d", spinResp.WinAmount)
+	log.Printf("Raw Resp  : %+v", spinResp)
+
+	// 3. Operator 派奖
 	settleResp, err := s.operatorClient.Settle(
 		ctx,
 		agent.OperatorURL,
@@ -179,39 +235,12 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		pkg.ToAmount(spinResp.WinAmount),
 	)
 	if err != nil {
+		log.Printf("Settle error: %+v", err)
 		return nil, err
 	}
 
 	return &provider.SpinResp{
 		Balance: settleResp.Balance,
-		Currency: "USD", //来自 user 表 currency
+		Currency: settleResp.Currency, //单一钱包, 余额及币种都是运营商管
 	}, nil
 }
-
-// func (s *WalletService) Rollback(ctx context.Context, req *provider.RollbackReq) (*provider.RollbackResp, error) {
-
-// 	// 解析 JWT
-// 	claims, err := pkg.ParseToken(req.Token)
-// 	if err != nil {
-// 		return nil, pkg.ErrUnauthorized
-// 	}
-
-// 	// 组装 Proto Request
-// 	pbReq := &walletpb.RollbackReq{
-// 		Uid:       claims.UID,
-// 		AgentId:   claims.AgentID,
-// 		OrderNo:   req.OrderNo,
-// 		RequestId: req.RequestID,
-// 		Reason:    req.Reason,
-// 	}
-
-// 	resp, err := s.adapter.Rollback(ctx, pbReq)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	//做一次转换
-// 	return &provider.RollbackResp{
-// 		Balance: resp.Balance,
-// 	}, nil
-// }

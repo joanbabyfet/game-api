@@ -30,6 +30,8 @@ type SpinReq struct {
 	AgentId       uint32                 `protobuf:"varint,5,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
 	GameId        uint32                 `protobuf:"varint,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	BetAmount     int64                  `protobuf:"varint,7,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
+	Currency      string                 `protobuf:"bytes,8,opt,name=currency,proto3" json:"currency,omitempty"`
+	DebugFail     bool                   `protobuf:"varint,99,opt,name=debug_fail,json=debugFail,proto3" json:"debug_fail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -113,6 +115,20 @@ func (x *SpinReq) GetBetAmount() int64 {
 	return 0
 }
 
+func (x *SpinReq) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *SpinReq) GetDebugFail() bool {
+	if x != nil {
+		return x.DebugFail
+	}
+	return false
+}
+
 type SpinResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
@@ -178,7 +194,7 @@ var File_slot_proto protoreflect.FileDescriptor
 const file_slot_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"slot.proto\x12\x04slot\"\xc3\x01\n" +
+	"slot.proto\x12\x04slot\"\xfe\x01\n" +
 	"\aSpinReq\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
@@ -188,7 +204,10 @@ const file_slot_proto_rawDesc = "" +
 	"\bagent_id\x18\x05 \x01(\rR\aagentId\x12\x17\n" +
 	"\agame_id\x18\x06 \x01(\rR\x06gameId\x12\x1d\n" +
 	"\n" +
-	"bet_amount\x18\a \x01(\x03R\tbetAmount\"^\n" +
+	"bet_amount\x18\a \x01(\x03R\tbetAmount\x12\x1a\n" +
+	"\bcurrency\x18\b \x01(\tR\bcurrency\x12\x1d\n" +
+	"\n" +
+	"debug_fail\x18c \x01(\bR\tdebugFail\"^\n" +
 	"\bSpinResp\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x18\n" +
 	"\abalance\x18\x02 \x01(\x03R\abalance\x12\x1d\n" +

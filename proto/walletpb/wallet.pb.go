@@ -255,6 +255,123 @@ func (x *RollbackResp) GetBalance() uint64 {
 	return 0
 }
 
+type CancelReq struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 玩家ID
+	Uid uint64 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	// 代理ID
+	AgentId uint32 `protobuf:"varint,2,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	// 原下注单号
+	OrderNo string `protobuf:"bytes,3,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	// 幂等请求ID
+	RequestId string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// 回滚原因（可选）
+	Reason        string `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelReq) Reset() {
+	*x = CancelReq{}
+	mi := &file_wallet_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelReq) ProtoMessage() {}
+
+func (x *CancelReq) ProtoReflect() protoreflect.Message {
+	mi := &file_wallet_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelReq.ProtoReflect.Descriptor instead.
+func (*CancelReq) Descriptor() ([]byte, []int) {
+	return file_wallet_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CancelReq) GetUid() uint64 {
+	if x != nil {
+		return x.Uid
+	}
+	return 0
+}
+
+func (x *CancelReq) GetAgentId() uint32 {
+	if x != nil {
+		return x.AgentId
+	}
+	return 0
+}
+
+func (x *CancelReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *CancelReq) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *CancelReq) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type CancelResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelResp) Reset() {
+	*x = CancelResp{}
+	mi := &file_wallet_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelResp) ProtoMessage() {}
+
+func (x *CancelResp) ProtoReflect() protoreflect.Message {
+	mi := &file_wallet_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelResp.ProtoReflect.Descriptor instead.
+func (*CancelResp) Descriptor() ([]byte, []int) {
+	return file_wallet_proto_rawDescGZIP(), []int{5}
+}
+
 var File_wallet_proto protoreflect.FileDescriptor
 
 const file_wallet_proto_rawDesc = "" +
@@ -275,7 +392,16 @@ const file_wallet_proto_rawDesc = "" +
 	"request_id\x18\x04 \x01(\tR\trequestId\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\"(\n" +
 	"\fRollbackResp\x12\x18\n" +
-	"\abalance\x18\x01 \x01(\x04R\abalanceB\"Z game-api/proto/walletpb;walletpbb\x06proto3"
+	"\abalance\x18\x01 \x01(\x04R\abalance\"\x8a\x01\n" +
+	"\tCancelReq\x12\x10\n" +
+	"\x03uid\x18\x01 \x01(\x04R\x03uid\x12\x19\n" +
+	"\bagent_id\x18\x02 \x01(\rR\aagentId\x12\x19\n" +
+	"\border_no\x18\x03 \x01(\tR\aorderNo\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\"\f\n" +
+	"\n" +
+	"CancelRespB\"Z game-api/proto/walletpb;walletpbb\x06proto3"
 
 var (
 	file_wallet_proto_rawDescOnce sync.Once
@@ -289,12 +415,14 @@ func file_wallet_proto_rawDescGZIP() []byte {
 	return file_wallet_proto_rawDescData
 }
 
-var file_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_wallet_proto_goTypes = []any{
 	(*BalanceReq)(nil),   // 0: wallet.BalanceReq
 	(*BalanceResp)(nil),  // 1: wallet.BalanceResp
 	(*RollbackReq)(nil),  // 2: wallet.RollbackReq
 	(*RollbackResp)(nil), // 3: wallet.RollbackResp
+	(*CancelReq)(nil),    // 4: wallet.CancelReq
+	(*CancelResp)(nil),   // 5: wallet.CancelResp
 }
 var file_wallet_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -315,7 +443,7 @@ func file_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_wallet_proto_rawDesc), len(file_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

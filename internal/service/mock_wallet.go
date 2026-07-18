@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 
 	dto "game-api/internal/dto/mock"
 	mockdata "game-api/internal/mock"
@@ -22,6 +23,8 @@ func NewMockWalletService(
 		authService: authService,
 	}
 }
+
+const DefaultCurrency = "USD" //这里测试用, 单一钱包, 余额及币种都是运营商管
 
 // 查询余额
 func (s *MockWalletService) Balance(ctx context.Context, req *dto.BalanceReq) (*dto.BalanceResp, error) {
@@ -47,7 +50,7 @@ func (s *MockWalletService) Balance(ctx context.Context, req *dto.BalanceReq) (*
 
 	return &dto.BalanceResp{
 		Balance: balance,
-		Currency: "USD", //在单一钱包模式下, Currency 属于 Operator 的玩家资料，与 Provider API 基本无关
+		Currency: DefaultCurrency, //在单一钱包模式下, Currency 属于 Operator 的玩家资料，与 Provider API 基本无关
 	}, nil
 }
 
@@ -62,9 +65,13 @@ func (s *MockWalletService) Bet(ctx context.Context, req *dto.BetReq) (*dto.BetR
 		"round_id":  	req.RoundID,
 		"game_code":   	req.GameCode,
 		"bet_amount":	req.BetAmount,
-		"bet_time":		req.BetTime,
 	})
 	
+	log.Println("========== Bet Verify ==========")
+	log.Printf("AppID     : %s", req.AppID)
+	log.Printf("Sign      : %s", req.Sign)
+	log.Printf("Sign Data : %s", data)
+
 	_, err := s.authService.VerifySign(
 		ctx,
 		req.AppID,
@@ -72,17 +79,22 @@ func (s *MockWalletService) Bet(ctx context.Context, req *dto.BetReq) (*dto.BetR
 		req.Sign,
 	)
 	if err != nil {
+		log.Println("========== Verify Failed ==========")
+		log.Printf("VerifySign Error: %v", err)
 		return nil, err
 	}
 
 	balance, err := s.wallet.Bet(req.PlayerID, req.BetAmount)
 	if err != nil {
+		log.Printf("Wallet Bet Error: %v", err)
 		return nil, err
 	}
 
+	log.Printf("Wallet Balance: %.2f", balance)
+
 	return &dto.BetResp{
 		Balance: balance,
-		Currency: "USD",
+		Currency: DefaultCurrency,
 	}, nil
 }
 
@@ -96,7 +108,6 @@ func (s *MockWalletService) Settle(ctx context.Context, req *dto.SettleReq) (*dt
 		"order_no":  	req.OrderNo,
 		"round_id":  	req.RoundID,
 		"game_code":   	req.GameCode,
-		"bet_amount":	req.BetAmount,
 		"win_amount":	req.WinAmount,
 	})
 
@@ -117,7 +128,7 @@ func (s *MockWalletService) Settle(ctx context.Context, req *dto.SettleReq) (*dt
 
 	return &dto.SettleResp{
 		Balance: balance,
-		Currency: "USD",
+		Currency: DefaultCurrency,
 	}, nil
 }
 // 取消下注
@@ -150,6 +161,6 @@ func (s *MockWalletService) Rollback(ctx context.Context, req *dto.RollbackReq) 
 
 	return &dto.RollbackResp{
 		Balance: balance,
-		Currency: "USD",
+		Currency: DefaultCurrency,
 	}, nil
 }

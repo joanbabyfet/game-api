@@ -19,6 +19,8 @@ type User struct {
 	Username string `gorm:"column:username;size:50" json:"username"`
 	// 昵称
 	Nickname string `gorm:"column:nickname;size:50" json:"nickname"`
+	// 默认币种
+	Currency string `gorm:"column:currency;size:10" json:"currency"`
 	// 状态：0=禁用 1=启用
 	Status int8 `gorm:"column:status" json:"status"`
 	// 最后登录时间

@@ -19,6 +19,7 @@ func (c *TestController) Index(ctx *gin.Context) {
 		10002,
 		1,
 		"nick",
+		"USD",
 	)
 	if err != nil {
 		pkg.HandleError(ctx, err)

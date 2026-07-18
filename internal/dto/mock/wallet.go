@@ -21,7 +21,6 @@ type BetReq struct {
 	RoundID  	string `json:"round_id" binding:"required"`
 	GameCode 	string `json:"game_code" binding:"required"` // 游戏标识
 	BetAmount 	float64 `json:"bet_amount" binding:"required"`
-	BetTime 	int64 `json:"bet_time" binding:"required"` //下注时间
 }
 
 type BetResp struct {
@@ -37,9 +36,7 @@ type SettleReq struct {
 	OrderNo   	string `json:"order_no" binding:"required"`
 	RoundID  	string `json:"round_id" binding:"required"`
 	GameCode 	string `json:"game_code" binding:"required"` // 游戏标识
-	BetAmount 	float64 `json:"bet_amount" binding:"required"`
-	WinAmount 	float64 `json:"win_amount" binding:"required"`
-	SettleTime 	int64  `json:"settle_time" binding:"required"`
+	WinAmount 	float64 `json:"win_amount" binding:"gte=0"` //可以是 0，且不能小于 0
 }
 
 type SettleResp struct {

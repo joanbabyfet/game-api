@@ -15,17 +15,19 @@ type JWTClaims struct {
 	UID      uint64 `json:"uid"`
 	AgentID  uint32 `json:"agent_id"`
 	PlayerID string `json:"player_id"` //运营商玩家标识 对应 username
+	Currency string `json:"currency"`
 
 	jwt.RegisteredClaims
 }
 
 // GenerateToken 生成JWT
-func GenerateToken(uid uint64, agentID uint32, player_id string) (string, error) {
+func GenerateToken(uid uint64, agentID uint32, player_id string, currency string) (string, error) {
 
 	claims := JWTClaims{
 		UID:      uid,
 		AgentID:  agentID,
 		PlayerID: player_id,
+		Currency: currency,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

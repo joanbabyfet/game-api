@@ -54,6 +54,7 @@ func RegisterProvider(r *gin.Engine) {
 		walletRepo,
 		agentRepo,
 		gameRepo,
+		userRepo,
 		walletAdapter,
 		slotAdapter,
 		authService,

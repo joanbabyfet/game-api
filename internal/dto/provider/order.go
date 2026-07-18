@@ -14,6 +14,7 @@ type OrderLogResp struct {
 	GameCode   string  `json:"game_code"`
 	BetAmount  float64 `json:"bet_amount"`
 	WinAmount  float64 `json:"win_amount"`
+	Currency   string  `json:"currency"`
 	Status     int8    `json:"status"`
 	SettleTime int64  `json:"settle_time"`
 	CreateTime int64  `json:"create_time"`
