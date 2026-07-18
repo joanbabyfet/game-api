@@ -63,15 +63,16 @@
 
 目前已完成：
 
-| Method | API | Status |
-|---------|-----|--------|
-| POST | `/authenticate` | ✅ |
-| POST | `/balance` | ✅ |
-| POST | `/bet` | ✅ |
-| POST | `/rollback` | ✅ |
-| GET | `/history` | ✅ |
-| GET | `/game/list` | ✅ |
-| POST | `/player/kick` | ✅ |
+| Method | API               | Status |
+| ------ | ----------------- | ------ |
+| POST   | `/player/login`   | ✅      |
+| POST   | `/game_url`       | ✅      |
+| GET    | `/game/list`      | ✅      |
+| POST   | `/player/balance` | ✅      |
+| POST   | `/spin`           | ✅      |
+| POST   | `/player/kick`    | ✅      |
+| POST   | `/get_order_log`  | ✅      |
+| POST   | `/ping`           | ✅      |
 
 ---
 
