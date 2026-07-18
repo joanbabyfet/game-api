@@ -8,19 +8,14 @@
 * 自定义 TCP + Protobuf RPC（Request / Response / Error Packet）
 * Provider API 与 Game Server 完全解耦
 * JWT 玩家认证
-* 单一钱包（Single Wallet）架构
-* Balance 查询
-* Bet
-* Rollback
-* Game List
-* Order History
-* Player Kick（GM）
-* Controller / Service / Adapter 分层架构
+* 单一钱包（Single Wallet）及 Mock Operator 测试框架
+* Slot Game 完整游戏流程（Login / Balance / Spin / Free Spin / Rollback）
+* RTP 统计、Jackpot Pool、Risk Control 风控机制
+* Controller / Service / Repository / Adapter 分层架构
 * DTO 与 Protobuf 解耦
-* 统一错误码与统一响应格式
-* 金额统一采用最小货币单位存储
-* 支持多 Provider 接入
-* 易于扩展多游戏（Slot / Fish / Casino）
+* 统一错误码、统一响应格式、幂等处理
+* 金额统一采用最小货币单位存储，支持多币种（Currency）
+* 支持多 Provider、多 Agent、多游戏扩展（Slot / Fish / Casino）
 
 ---
 
