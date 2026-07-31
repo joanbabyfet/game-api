@@ -34,6 +34,8 @@ func RegisterProvider(r *gin.Engine) {
 	gameOrderRepo := repository.NewGameOrderRepository(bootstrap.DB)
 	userRepo := repository.NewUserRepository(bootstrap.DB)
 	walletRepo := repository.NewWalletRepository(bootstrap.DB)
+	walletLogRepo := repository.NewWalletLogRepository(bootstrap.DB)
+	rollbackLogRepo := repository.NewRollbackLogRepository(bootstrap.DB)
 
 	// Service
 	authService := service.NewAuthService(agentRepo)
@@ -51,10 +53,16 @@ func RegisterProvider(r *gin.Engine) {
 		authService,
 	)
 	walletService := service.NewWalletService(
+		bootstrap.DB,
+		bootstrap.GetRedis(),
 		walletRepo,
 		agentRepo,
 		gameRepo,
 		userRepo,
+		walletRepo,
+		walletLogRepo,
+		gameOrderRepo,
+		rollbackLogRepo,
 		walletAdapter,
 		slotAdapter,
 		authService,

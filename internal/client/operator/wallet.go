@@ -41,7 +41,7 @@ func (c *Client) Balance(ctx context.Context, baseURL string, agent *model.Agent
 }
 
 //下注(扣钱)
-func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, roundID string, gameCode string, betAmount float64) (*mock.BetResp, error) {
+func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, gameCode string, betAmount float64) (*mock.BetResp, error) {
 
 	// 组装 sign
 	now := pkg.Timestamp()
@@ -51,7 +51,6 @@ func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, pl
 			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
-			"round_id":  roundID,
 			"game_code": gameCode,
 			"bet_amount": betAmount,
 		}),
@@ -66,7 +65,6 @@ func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, pl
 		},
 		PlayerID: playerID,
 		OrderNo:  orderNo,
-		RoundID:  roundID,
 		GameCode: gameCode,
 		BetAmount:  betAmount, //下注金额
 	}
@@ -88,7 +86,7 @@ func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, pl
 }
 
 //结算(加钱)
-func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, roundID string, gameCode string, winAmount float64) (*mock.SettleResp, error) {
+func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, gameCode string, winAmount float64) (*mock.SettleResp, error) {
 
 	// 组装 sign
 	now := pkg.Timestamp()
@@ -98,7 +96,6 @@ func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent,
 			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
-			"round_id":  roundID,
 			"game_code": gameCode,
 			"win_amount": winAmount,
 		}),
@@ -113,7 +110,6 @@ func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent,
 		},
 		PlayerID: playerID,
 		OrderNo:  orderNo,
-		RoundID:  roundID,
 		GameCode: gameCode,
 		WinAmount: winAmount,
 	}
@@ -136,7 +132,7 @@ func (c *Client) Settle(ctx context.Context, baseURL string, agent *model.Agent,
 }
 
 // 取消下注
-func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, roundID string, gameCode string, betAmount float64) (*mock.RollbackResp, error) {
+func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agent, playerID string, orderNo string, gameCode string, betAmount float64) (*mock.RollbackResp, error) {
 
 	// 组装 sign
 	now := pkg.Timestamp()
@@ -146,7 +142,6 @@ func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agen
 			"timestamp": now,
 			"player_id": playerID,
 			"order_no":  orderNo,
-			"round_id":  roundID,
 			"game_code": gameCode,
 			"bet_amount": betAmount,
 		}),
@@ -161,7 +156,6 @@ func (c *Client) Rollback(ctx context.Context, baseURL string, agent *model.Agen
 		},
 		PlayerID: playerID,
 		OrderNo:  orderNo,
-		RoundID:  roundID,
 		GameCode: gameCode,
 		BetAmount:  betAmount, //下注金额
 	}

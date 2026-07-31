@@ -188,7 +188,7 @@ func (s *UserService) Login(ctx context.Context, req *provider.LoginReq) (*provi
 			UpdateTime:    now,
 		}
 
-		if err := s.walletRepo.Create(wallet); err != nil {
+		if err := s.walletRepo.Create(ctx, wallet); err != nil {
 			return nil, err
 		}
 

@@ -27,8 +27,8 @@ func NewGameOrderService(
 }
 
 // Create 新增注单
-func (s *GameOrderService) Create(order *model.GameOrder) error {
-	return s.repo.Create(order)
+func (s *GameOrderService) Create(ctx context.Context, order *model.GameOrder) error {
+	return s.repo.Create(ctx, order)
 }
 
 // Update 更新注单
@@ -52,8 +52,8 @@ func (s *GameOrderService) GetByOrderNo(orderNo string) (*model.GameOrder, error
 }
 
 // GetByRequestID 根据RequestID查询
-func (s *GameOrderService) GetByRequestID(requestID string) (*model.GameOrder, error) {
-	return s.repo.GetByRequestID(requestID)
+func (s *GameOrderService) GetByRequestID(ctx context.Context, requestID string) (*model.GameOrder, error) {
+	return s.repo.GetByRequestID(ctx, requestID)
 }
 
 // GetByRoundID 根据RoundID查询

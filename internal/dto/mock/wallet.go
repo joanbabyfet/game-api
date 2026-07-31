@@ -18,7 +18,6 @@ type BetReq struct {
 
 	PlayerID 	string  `json:"player_id" binding:"required"`
 	OrderNo   	string `json:"order_no" binding:"required"`
-	RoundID  	string `json:"round_id" binding:"required"`
 	GameCode 	string `json:"game_code" binding:"required"` // 游戏标识
 	BetAmount 	float64 `json:"bet_amount" binding:"required"`
 }
@@ -34,7 +33,6 @@ type SettleReq struct {
 
 	PlayerID 	string  `json:"player_id" binding:"required"`
 	OrderNo   	string `json:"order_no" binding:"required"`
-	RoundID  	string `json:"round_id" binding:"required"`
 	GameCode 	string `json:"game_code" binding:"required"` // 游戏标识
 	WinAmount 	float64 `json:"win_amount" binding:"gte=0"` //可以是 0，且不能小于 0
 }
@@ -50,7 +48,6 @@ type RollbackReq struct {
 
 	PlayerID 	string  `json:"player_id" binding:"required"`
 	OrderNo		string `json:"order_no" binding:"required"`
-	RoundID  	string `json:"round_id" binding:"required"`
 	GameCode 	string `json:"game_code" binding:"required"` // 游戏标识
 	BetAmount	float64 `json:"bet_amount" binding:"required"`
 }

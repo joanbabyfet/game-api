@@ -9,13 +9,13 @@ type RTPStat struct {
 	GameID uint32 `gorm:"column:game_id" json:"game_id"`
 
 	// 总Spin次数
-	TotalSpin uint64 `gorm:"column:total_spin" json:"total_spin"`
+	TotalSpin int64 `gorm:"column:total_spin" json:"total_spin"`
 
 	// 总下注（最小货币单位）
-	TotalBet uint64 `gorm:"column:total_bet" json:"total_bet"`
+	TotalBet int64 `gorm:"column:total_bet" json:"total_bet"`
 
 	// 总派奖（最小货币单位）
-	TotalWin uint64 `gorm:"column:total_win" json:"total_win"`
+	TotalWin int64 `gorm:"column:total_win" json:"total_win"`
 
 	// 创建时间
 	CreateTime int64 `gorm:"column:create_time" json:"create_time"`

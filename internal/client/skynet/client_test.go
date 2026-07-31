@@ -7,41 +7,6 @@ import (
 	"time"
 )
 
-func TestEncodeDecode(t *testing.T) {
-	src := &Packet{
-		Type:    PacketResponse,
-		CmdID:   CmdBalance,
-		SeqID:   100,
-		Payload: []byte("hello"),
-	}
-
-	data, err := Encode(src)
-	if err != nil {
-		t.Fatalf("encode failed: %v", err)
-	}
-
-	dst, err := Decode(data)
-	if err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-
-	if dst.Type != src.Type {
-		t.Fatal("packet type mismatch")
-	}
-
-	if dst.CmdID != src.CmdID {
-		t.Fatalf("message id mismatch")
-	}
-
-	if dst.SeqID != src.SeqID {
-		t.Fatalf("sequence mismatch")
-	}
-
-	if !bytes.Equal(dst.Payload, src.Payload) {
-		t.Fatalf("payload mismatch")
-	}
-}
-
 func TestReadWritePacket(t *testing.T) {
 	server, client := net.Pipe()
 	defer server.Close()

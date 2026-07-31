@@ -2,13 +2,14 @@ package model
 
 // 回滚类型
 const (
-	RollbackTypeProvider int8 = 1 // Provider 回滚
-	RollbackTypeAdmin    int8 = 2 // Admin 回滚
-	RollbackTypeRetry    int8 = 3 // Retry 回滚
+	RollbackTypeProvider int8 = 1 // Provider 自动回滚
+	RollbackTypeAdmin    int8 = 2 // Admin 手动回滚
+	RollbackTypeRetry    int8 = 3 // Retry 重试回滚
 )
 
 // 回滚状态
 const (
+	RollbackStatusPending int8 = 0 // 待执行
 	RollbackStatusSuccess int8 = 1 // 成功
 	RollbackStatusFailed  int8 = 2 // 失败
 )
@@ -43,7 +44,7 @@ type RollbackLog struct {
 	GameID uint32 `gorm:"column:game_id" json:"game_id"`
 
 	// 回滚金额（最小货币单位）
-	Amount uint64 `gorm:"column:amount" json:"amount"`
+	Amount int64 `gorm:"column:amount" json:"amount"`
 
 	// 回滚原因
 	Reason string `gorm:"column:reason;size:255" json:"reason"`

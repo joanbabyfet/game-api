@@ -62,7 +62,6 @@ func (s *MockWalletService) Bet(ctx context.Context, req *dto.BetReq) (*dto.BetR
 		"timestamp": 	req.Timestamp,
 		"player_id":    req.PlayerID,
 		"order_no":  	req.OrderNo,
-		"round_id":  	req.RoundID,
 		"game_code":   	req.GameCode,
 		"bet_amount":	req.BetAmount,
 	})
@@ -106,7 +105,6 @@ func (s *MockWalletService) Settle(ctx context.Context, req *dto.SettleReq) (*dt
 		"timestamp": 	req.Timestamp,
 		"player_id":    req.PlayerID,
 		"order_no":  	req.OrderNo,
-		"round_id":  	req.RoundID,
 		"game_code":   	req.GameCode,
 		"win_amount":	req.WinAmount,
 	})
@@ -139,7 +137,6 @@ func (s *MockWalletService) Rollback(ctx context.Context, req *dto.RollbackReq) 
 		"timestamp": 	req.Timestamp,
 		"player_id":    req.PlayerID,
 		"order_no":  	req.OrderNo,
-		"round_id":  	req.RoundID,
 		"game_code":   	req.GameCode,
 		"bet_amount":	req.BetAmount,
 	})

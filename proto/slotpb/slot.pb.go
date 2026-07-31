@@ -25,12 +25,11 @@ type SpinReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	RoundId       string                 `protobuf:"bytes,3,opt,name=round_id,json=roundId,proto3" json:"round_id,omitempty"`
-	Uid           uint64                 `protobuf:"varint,4,opt,name=uid,proto3" json:"uid,omitempty"`
-	AgentId       uint32                 `protobuf:"varint,5,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
-	GameId        uint32                 `protobuf:"varint,6,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	BetAmount     int64                  `protobuf:"varint,7,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
-	Currency      string                 `protobuf:"bytes,8,opt,name=currency,proto3" json:"currency,omitempty"`
+	Uid           uint64                 `protobuf:"varint,3,opt,name=uid,proto3" json:"uid,omitempty"`
+	AgentId       uint32                 `protobuf:"varint,4,opt,name=agent_id,json=agentId,proto3" json:"agent_id,omitempty"`
+	GameId        uint32                 `protobuf:"varint,5,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	BetAmount     int64                  `protobuf:"varint,6,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
+	Currency      string                 `protobuf:"bytes,7,opt,name=currency,proto3" json:"currency,omitempty"`
 	DebugFail     bool                   `protobuf:"varint,99,opt,name=debug_fail,json=debugFail,proto3" json:"debug_fail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -80,13 +79,6 @@ func (x *SpinReq) GetOrderNo() string {
 	return ""
 }
 
-func (x *SpinReq) GetRoundId() string {
-	if x != nil {
-		return x.RoundId
-	}
-	return ""
-}
-
 func (x *SpinReq) GetUid() uint64 {
 	if x != nil {
 		return x.Uid
@@ -132,8 +124,9 @@ func (x *SpinReq) GetDebugFail() bool {
 type SpinResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Balance       int64                  `protobuf:"varint,2,opt,name=balance,proto3" json:"balance,omitempty"`
-	WinAmount     int64                  `protobuf:"varint,3,opt,name=win_amount,json=winAmount,proto3" json:"win_amount,omitempty"`
+	RoundId       string                 `protobuf:"bytes,2,opt,name=round_id,json=roundId,proto3" json:"round_id,omitempty"`
+	Balance       int64                  `protobuf:"varint,3,opt,name=balance,proto3" json:"balance,omitempty"`
+	WinAmount     int64                  `protobuf:"varint,4,opt,name=win_amount,json=winAmount,proto3" json:"win_amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -175,6 +168,13 @@ func (x *SpinResp) GetOrderNo() string {
 	return ""
 }
 
+func (x *SpinResp) GetRoundId() string {
+	if x != nil {
+		return x.RoundId
+	}
+	return ""
+}
+
 func (x *SpinResp) GetBalance() int64 {
 	if x != nil {
 		return x.Balance
@@ -194,25 +194,25 @@ var File_slot_proto protoreflect.FileDescriptor
 const file_slot_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"slot.proto\x12\x04slot\"\xfe\x01\n" +
+	"slot.proto\x12\x04slot\"\xe3\x01\n" +
 	"\aSpinReq\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
-	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x19\n" +
-	"\bround_id\x18\x03 \x01(\tR\aroundId\x12\x10\n" +
-	"\x03uid\x18\x04 \x01(\x04R\x03uid\x12\x19\n" +
-	"\bagent_id\x18\x05 \x01(\rR\aagentId\x12\x17\n" +
-	"\agame_id\x18\x06 \x01(\rR\x06gameId\x12\x1d\n" +
+	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x10\n" +
+	"\x03uid\x18\x03 \x01(\x04R\x03uid\x12\x19\n" +
+	"\bagent_id\x18\x04 \x01(\rR\aagentId\x12\x17\n" +
+	"\agame_id\x18\x05 \x01(\rR\x06gameId\x12\x1d\n" +
 	"\n" +
-	"bet_amount\x18\a \x01(\x03R\tbetAmount\x12\x1a\n" +
-	"\bcurrency\x18\b \x01(\tR\bcurrency\x12\x1d\n" +
+	"bet_amount\x18\x06 \x01(\x03R\tbetAmount\x12\x1a\n" +
+	"\bcurrency\x18\a \x01(\tR\bcurrency\x12\x1d\n" +
 	"\n" +
-	"debug_fail\x18c \x01(\bR\tdebugFail\"^\n" +
+	"debug_fail\x18c \x01(\bR\tdebugFail\"y\n" +
 	"\bSpinResp\x12\x19\n" +
-	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x18\n" +
-	"\abalance\x18\x02 \x01(\x03R\abalance\x12\x1d\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x19\n" +
+	"\bround_id\x18\x02 \x01(\tR\aroundId\x12\x18\n" +
+	"\abalance\x18\x03 \x01(\x03R\abalance\x12\x1d\n" +
 	"\n" +
-	"win_amount\x18\x03 \x01(\x03R\twinAmountB\x1eZ\x1cgame-api/proto/slotpb;slotpbb\x06proto3"
+	"win_amount\x18\x04 \x01(\x03R\twinAmountB\x1eZ\x1cgame-api/proto/slotpb;slotpbb\x06proto3"
 
 var (
 	file_slot_proto_rawDescOnce sync.Once

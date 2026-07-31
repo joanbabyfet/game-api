@@ -26,7 +26,7 @@ type JackpotLog struct {
 	JackpotType string `gorm:"column:jackpot_type;size:20" json:"jackpot_type"`
 
 	// 中奖金额（最小货币单位）
-	Amount uint64 `gorm:"column:amount" json:"amount"`
+	Amount int64 `gorm:"column:amount" json:"amount"`
 
 	// 中奖时间
 	CreateTime int64 `gorm:"column:create_time" json:"create_time"`

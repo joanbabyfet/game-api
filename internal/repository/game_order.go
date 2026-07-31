@@ -1,10 +1,14 @@
 package repository
 
 import (
+	"context"
+	"errors"
 	"game-api/internal/model"
 	"game-api/pkg"
+	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type GameOrderRepository struct {
@@ -89,7 +93,7 @@ func (r *GameOrderRepository) List(q GameOrderQuery) ([]model.GameOrder, error) 
 }
 
 // Create 新增注单
-func (r *GameOrderRepository) Create(order *model.GameOrder) error {
+func (r *GameOrderRepository) Create(ctx context.Context, order *model.GameOrder) error {
 	return r.db.Create(order).Error
 }
 
@@ -144,7 +148,7 @@ func (r *GameOrderRepository) GetByOrderNo(orderNo string) (*model.GameOrder, er
 }
 
 // GetByRequestID 根据请求ID查询（幂等）
-func (r *GameOrderRepository) GetByRequestID(requestID string) (*model.GameOrder, error) {
+func (r *GameOrderRepository) GetByRequestID(ctx context.Context, requestID string) (*model.GameOrder, error) {
 
 	var order model.GameOrder
 
@@ -171,4 +175,173 @@ func (r *GameOrderRepository) GetByRoundID(roundID string) ([]model.GameOrder, e
 		Error
 
 	return orders, err
+}
+
+// WithTx 使用事务
+func (r *GameOrderRepository) WithTx(tx *gorm.DB) *GameOrderRepository {
+	return &GameOrderRepository{
+		db: tx,
+	}
+}
+
+// GetByOrderNoForUpdate 根据订单号查询并加行锁
+func (r *GameOrderRepository) GetByOrderNoForUpdate(
+	ctx context.Context,
+	orderNo string,
+) (*model.GameOrder, error) {
+
+	var order model.GameOrder
+
+	err := r.db.
+		WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("order_no = ?", orderNo).
+		First(&order).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &order, nil
+}
+
+func (r *GameOrderRepository) Rollback(
+	ctx context.Context,
+	orderNo string,
+	reason string,
+) error {
+
+	return r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("order_no = ?", orderNo).
+		Update("status", model.OrderStatusRolledBack).
+		Error
+}
+
+// UpdateStatus 按当前状态更新为目标状态。
+//
+// 使用：
+// WHERE id = ? AND status = ?
+//
+// 可以防止并发请求把订单状态覆盖掉。
+func (r *GameOrderRepository) UpdateStatus(
+	ctx context.Context,
+	orderID uint64,
+	fromStatus int8,
+	toStatus int8,
+) error {
+
+	now := time.Now().Unix()
+
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where(
+			"id = ? AND status = ?",
+			orderID,
+			fromStatus,
+		).
+		Updates(map[string]interface{}{
+			"status":      toStatus,
+			"update_time": now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		// 先检查订单是否存在，区分“不存在”和“状态已经变化”。
+		var order model.GameOrder
+
+		err := r.db.WithContext(ctx).
+			Select("id", "status").
+			Where("id = ?", orderID).
+			First(&order).
+			Error
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return pkg.ErrOrderNotFound
+		}
+
+		if err != nil {
+			return err
+		}
+
+		return pkg.NewError(
+			pkg.ORDER_STATUS_ERROR,
+			"order status has changed",
+		)
+	}
+
+	return nil
+}
+
+func (r *GameOrderRepository) UpdateGameResult(
+	ctx context.Context,
+	orderID uint64,
+	roundID string,
+	winAmount int64,
+	profit int64,
+) error {
+	now := time.Now().Unix()
+
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where(
+			"id = ? AND status = ?",
+			orderID,
+			model.OrderStatusBetSuccess,
+		).
+		Updates(map[string]interface{}{
+			"round_id":    roundID,
+			"win_amount":  winAmount,
+			"profit":      profit,
+			"status":      model.OrderStatusWaitSettle,
+			"update_time": now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+
+	return nil
+}
+
+func (r *GameOrderRepository) UpdateSettled(
+	ctx context.Context,
+	orderID uint64,
+	balanceAfter int64,
+	currency string,
+) error {
+	now := time.Now().Unix()
+
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where(
+			"id = ? AND status = ?",
+			orderID,
+			model.OrderStatusWaitSettle,
+		).
+		Updates(map[string]interface{}{
+			"balance_after": balanceAfter,
+			"currency":      currency,
+			"status":        model.OrderStatusSettled,
+			"settle_time":   now,
+			"update_time":   now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+
+	return nil
 }

@@ -9,16 +9,16 @@ type JackpotPool struct {
 	GameID uint32 `gorm:"column:game_id" json:"game_id"`
 
 	// Mini 奖池金额
-	Mini uint64 `gorm:"column:mini" json:"mini"`
+	Mini int64 `gorm:"column:mini" json:"mini"`
 
 	// Minor 奖池金额
-	Minor uint64 `gorm:"column:minor" json:"minor"`
+	Minor int64 `gorm:"column:minor" json:"minor"`
 
 	// Major 奖池金额
-	Major uint64 `gorm:"column:major" json:"major"`
+	Major int64 `gorm:"column:major" json:"major"`
 
 	// Grand 奖池金额
-	Grand uint64 `gorm:"column:grand" json:"grand"`
+	Grand int64 `gorm:"column:grand" json:"grand"`
 
 	// 创建时间
 	CreateTime int64 `gorm:"column:create_time" json:"create_time"`

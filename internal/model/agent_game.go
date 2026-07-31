@@ -30,16 +30,16 @@ type AgentGame struct {
 	CommissionRate float64 `gorm:"column:commission_rate" json:"commission_rate"`
 
 	// 最小下注（最小货币单位）
-	MinBet uint64 `gorm:"column:min_bet" json:"min_bet"`
+	MinBet int64 `gorm:"column:min_bet" json:"min_bet"`
 
 	// 最大下注（最小货币单位）
-	MaxBet uint64 `gorm:"column:max_bet" json:"max_bet"`
+	MaxBet int64 `gorm:"column:max_bet" json:"max_bet"`
 
 	// 单局最大派奖
-	MaxWin uint64 `gorm:"column:max_win" json:"max_win"`
+	MaxWin int64 `gorm:"column:max_win" json:"max_win"`
 
 	// 单局最大倍率
-	MaxMultiple uint32 `gorm:"column:max_multiple" json:"max_multiple"`
+	MaxMultiple int32 `gorm:"column:max_multiple" json:"max_multiple"`
 
 	// 是否开启代理风控（0=关闭 1=开启）
 	RiskEnable int8 `gorm:"column:risk_enable" json:"risk_enable"`

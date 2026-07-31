@@ -12,10 +12,10 @@ type Wallet struct {
 	AgentID uint32 `gorm:"column:agent_id" json:"agent_id"`
 
 	// 可用余额（最小货币单位）
-	Balance uint64 `gorm:"column:balance" json:"balance"`
+	Balance int64 `gorm:"column:balance" json:"balance"`
 
 	// 冻结余额（最小货币单位）
-	FreezeBalance uint64 `gorm:"column:freeze_balance" json:"freeze_balance"`
+	FreezeBalance int64 `gorm:"column:freeze_balance" json:"freeze_balance"`
 
 	// 创建时间
 	CreateTime int64 `gorm:"column:create_time" json:"create_time"`

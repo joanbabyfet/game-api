@@ -15,10 +15,7 @@ const (
 	CmdLogin 		uint16 = 1001
 	CmdKick 		uint16 = 1002
 
-    CmdBalance      uint16 = 2001
-    CmdSpin         uint16 = 2002
-    CmdRollback     uint16 = 2003
-	CmdCancel     	uint16 = 2004
+    CmdSpin         uint16 = 2001
 
     CmdPing         uint16 = 9999
 	

@@ -18,13 +18,13 @@ type WalletLog struct {
 	Type string `gorm:"column:type;size:30" json:"type"`
 
 	// 变动金额（最小货币单位）
-	Amount uint64 `gorm:"column:amount" json:"amount"`
+	Amount int64 `gorm:"column:amount" json:"amount"`
 
 	// 变动前余额（最小货币单位）
-	BalanceBefore uint64 `gorm:"column:balance_before" json:"balance_before"`
+	BalanceBefore int64 `gorm:"column:balance_before" json:"balance_before"`
 
 	// 变动后余额（最小货币单位）
-	BalanceAfter uint64 `gorm:"column:balance_after" json:"balance_after"`
+	BalanceAfter int64 `gorm:"column:balance_after" json:"balance_after"`
 
 	// 关联订单号
 	RefOrderNo string `gorm:"column:ref_order_no;size:64" json:"ref_order_no"`
@@ -37,3 +37,17 @@ type WalletLog struct {
 func (WalletLog) TableName() string {
 	return "wallet_log"
 }
+
+// Wallet Log Type
+const (
+	WalletLogTypeBet       = "BET"        // 下注
+	WalletLogTypeWin       = "WIN"        // 派奖
+	WalletLogTypeBonus     = "BONUS"      // Bonus 奖励
+	WalletLogTypeFreeSpin  = "FREE_SPIN"  // 免费游戏奖励
+	WalletLogTypeJackpot   = "JACKPOT"    // 奖池奖励
+	WalletLogTypeDeposit   = "DEPOSIT"    // 充值
+	WalletLogTypeWithdraw  = "WITHDRAW"   // 提现
+	WalletLogTypeAdminAdd  = "ADMIN_ADD"  // 后台加钱
+	WalletLogTypeAdminSub  = "ADMIN_SUB"  // 后台扣钱
+	WalletLogTypeRollback  = "ROLLBACK"   // 回滚
+)

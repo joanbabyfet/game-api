@@ -32,7 +32,7 @@ type FreeSpin struct {
 	TriggerOrderNo string `gorm:"column:trigger_order_no;size:64" json:"trigger_order_no"`
 
 	// 免费游戏下注金额（用于计算派奖）
-	BetAmount uint64 `gorm:"column:bet_amount" json:"bet_amount"`
+	BetAmount int64 `gorm:"column:bet_amount" json:"bet_amount"`
 
 	// 总免费次数
 	TotalCount int32 `gorm:"column:total_count" json:"total_count"`
@@ -41,7 +41,7 @@ type FreeSpin struct {
 	RemainCount int32 `gorm:"column:remain_count" json:"remain_count"`
 
 	// 累计中奖金额
-	TotalWinAmount uint64 `gorm:"column:total_win_amount" json:"total_win_amount"`
+	TotalWinAmount int64 `gorm:"column:total_win_amount" json:"total_win_amount"`
 
 	// 状态
 	Status int8 `gorm:"column:status" json:"status"`

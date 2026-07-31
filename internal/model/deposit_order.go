@@ -25,7 +25,7 @@ type DepositOrder struct {
 	AgentID uint32 `gorm:"column:agent_id" json:"agent_id"`
 
 	// 金额（最小货币单位）
-	Amount uint64 `gorm:"column:amount" json:"amount"`
+	Amount int64 `gorm:"column:amount" json:"amount"`
 
 	// 状态
 	Status int8 `gorm:"column:status" json:"status"`

@@ -37,7 +37,7 @@ type GameTransferOrder struct {
 	TransferType int8 `gorm:"column:transfer_type" json:"transfer_type"`
 
 	// 转账金额（最小货币单位）
-	Amount uint64 `gorm:"column:amount" json:"amount"`
+	Amount int64 `gorm:"column:amount" json:"amount"`
 
 	// 状态
 	Status int8 `gorm:"column:status" json:"status"`
