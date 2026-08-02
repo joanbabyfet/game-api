@@ -4,3 +4,8 @@ app:
 cron:
   report: "@every 5m"
   jackpot: "@every 1m"
+  order_recover: "@every 10s"
+  recover_batch_size: 100
+  recover_lock_ttl: 30
+  recover_max_retry: 5
+  recover_min_age: 15

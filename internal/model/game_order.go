@@ -70,6 +70,18 @@ type GameOrder struct {
 
 	// 修改时间
 	UpdateTime int64 `gorm:"column:update_time" json:"update_time"`
+
+	// Worker补偿重试次数
+	RetryCount uint32 `gorm:"column:retry_count" json:"retry_count"`
+
+	// 下次允许补偿时间
+	NextRetryTime int64 `gorm:"column:next_retry_time" json:"next_retry_time"`
+
+	// Worker抢占锁截止时间
+	LockedUntil int64 `gorm:"column:locked_until" json:"locked_until"`
+
+	// 最近一次补偿错误
+	LastError string `gorm:"column:last_error;size:500" json:"last_error"`
 }
 
 // TableName 表名

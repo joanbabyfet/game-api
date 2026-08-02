@@ -110,8 +110,8 @@ func (r *GameOrderRepository) GetByIDForUpdate(ctx context.Context, id uint64) (
 	return &order, nil
 }
 
-// UpdateRolledBackFromBetSuccess 原子地将本地已扣款注单更新为已退款。
-func (r *GameOrderRepository) UpdateRolledBackFromBetSuccess(
+// UpdateRolledBackFromWaitRollback 原子地将待退款注单更新为已退款。
+func (r *GameOrderRepository) UpdateRolledBackFromWaitRollback(
 	ctx context.Context,
 	orderID uint64,
 	balanceAfter int64,
@@ -121,7 +121,7 @@ func (r *GameOrderRepository) UpdateRolledBackFromBetSuccess(
 	now := time.Now().Unix()
 	result := r.db.WithContext(ctx).
 		Model(&model.GameOrder{}).
-		Where("id = ? AND status = ?", orderID, model.OrderStatusBetSuccess).
+		Where("id = ? AND status = ?", orderID, model.OrderStatusWaitRollback).
 		Updates(map[string]any{
 			"balance_after":   balanceAfter,
 			"currency":        currency,
@@ -137,6 +137,68 @@ func (r *GameOrderRepository) UpdateRolledBackFromBetSuccess(
 		return pkg.ErrOrderStatus
 	}
 	return nil
+}
+
+// ListRecoverable 查询到期且未被其他Worker锁定的补偿订单。
+func (r *GameOrderRepository) ListRecoverable(
+	ctx context.Context,
+	now int64,
+	updatedBefore int64,
+	maxRetry uint32,
+	limit int,
+) ([]model.GameOrder, error) {
+	var orders []model.GameOrder
+	err := r.db.WithContext(ctx).
+		Where("status IN ?", []int8{
+			model.OrderStatusBetSuccess,
+			model.OrderStatusWaitSettle,
+			model.OrderStatusWaitRollback,
+		}).
+		Where("next_retry_time <= ?", now).
+		Where("locked_until <= ?", now).
+		Where("retry_count < ?", maxRetry).
+		Where("update_time <= ?", updatedBefore).
+		Order("update_time ASC, id ASC").
+		Limit(limit).
+		Find(&orders).Error
+	return orders, err
+}
+
+// ClaimRecovery 使用条件更新抢占一笔订单。
+func (r *GameOrderRepository) ClaimRecovery(ctx context.Context, orderID uint64, now, lockedUntil int64) (bool, error) {
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("id = ? AND locked_until <= ?", orderID, now).
+		Where("status IN ?", []int8{
+			model.OrderStatusBetSuccess,
+			model.OrderStatusWaitSettle,
+			model.OrderStatusWaitRollback,
+		}).
+		Update("locked_until", lockedUntil)
+	return result.RowsAffected == 1, result.Error
+}
+
+func (r *GameOrderRepository) MarkRetryFailed(ctx context.Context, orderID uint64, lastError string, nextRetryTime int64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("id = ?", orderID).
+		Updates(map[string]any{
+			"retry_count":     gorm.Expr("retry_count + 1"),
+			"next_retry_time": nextRetryTime,
+			"locked_until":    0,
+			"last_error":      lastError,
+		}).Error
+}
+
+func (r *GameOrderRepository) ReleaseRecovery(ctx context.Context, orderID uint64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("id = ?", orderID).
+		Updates(map[string]any{
+			"next_retry_time": 0,
+			"locked_until":    0,
+			"last_error":      "",
+		}).Error
 }
 
 // Update 更新注单
@@ -319,6 +381,25 @@ func (r *GameOrderRepository) UpdateStatus(
 	return nil
 }
 
+func (r *GameOrderRepository) UpdateWaitRollback(ctx context.Context, orderID uint64, reason string) error {
+	now := time.Now().Unix()
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("id = ? AND status = ?", orderID, model.OrderStatusBetSuccess).
+		Updates(map[string]any{
+			"status":          model.OrderStatusWaitRollback,
+			"rollback_reason": reason,
+			"update_time":     now,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+	return nil
+}
+
 func (r *GameOrderRepository) UpdateGameResult(
 	ctx context.Context,
 	orderID uint64,
@@ -449,6 +530,7 @@ func (r *GameOrderRepository) UpdateRolledBack(
 			"balance_after": balanceAfter,
 			"currency":      currency,
 			"status":        model.OrderStatusRolledBack,
+			"rollback_time": now,
 			"update_time":   now,
 		})
 

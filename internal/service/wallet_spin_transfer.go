@@ -123,6 +123,9 @@ func (s *WalletService) spinTransferWallet(
 			}
 			return nil, err
 		}
+		if updateErr := s.orderRepo.UpdateWaitRollback(ctx, order.ID, rpcErr.Msg); updateErr != nil {
+			return nil, pkg.ErrOrderUpdateFailed
+		}
 		if rollbackErr := s.rollbackTransferSpin(ctx, order.ID, rpcErr.Msg); rollbackErr != nil {
 			return nil, rollbackErr
 		}
@@ -290,7 +293,7 @@ func (s *WalletService) rollbackTransferSpin(ctx context.Context, orderID uint64
 		if order.Status == model.OrderStatusRolledBack {
 			return nil
 		}
-		if order.Status != model.OrderStatusBetSuccess {
+		if order.Status != model.OrderStatusWaitRollback {
 			return pkg.ErrOrderStatus
 		}
 		wallet, err := walletRepo.GetByUIDForUpdate(ctx, order.UID)
@@ -310,7 +313,7 @@ func (s *WalletService) rollbackTransferSpin(ctx context.Context, orderID uint64
 		}); err != nil {
 			return err
 		}
-		return orderRepo.UpdateRolledBackFromBetSuccess(ctx, order.ID, after, order.Currency, reason)
+		return orderRepo.UpdateRolledBackFromWaitRollback(ctx, order.ID, after, order.Currency, reason)
 	})
 	if err == nil && uid > 0 {
 		s.deleteCache(ctx, uid)

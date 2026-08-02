@@ -482,12 +482,11 @@ func (s *WalletService) spinSingleWallet(ctx context.Context, req *provider.Spin
 
 		// 普通 Spin：这里仅适用于 Skynet 明确业务失败。
 		// TCP 超时等结果未知错误，不应立即回滚。
-		if err := s.orderRepo.UpdateStatus(
-			ctx,
-			order.ID,
-			model.OrderStatusBetSuccess,
-			model.OrderStatusWaitRollback,
-		); err != nil {
+		var rpcErr *skynet.Error
+		if !errors.As(spinErr, &rpcErr) {
+			return nil, spinErr
+		}
+		if err := s.orderRepo.UpdateWaitRollback(ctx, order.ID, rpcErr.Msg); err != nil {
 			log.Printf(
 				"[Order] update wait rollback failed request_id=%s order_no=%s err=%v",
 				requestID,

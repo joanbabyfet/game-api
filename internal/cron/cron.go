@@ -1,11 +1,21 @@
 package cron
 
-import "github.com/robfig/cron/v3"
+import (
+	"game-api/internal/config"
 
-func Start() {
+	robfigcron "github.com/robfig/cron/v3"
+)
 
-    c := cron.New()
-
-    c.Start()
-
+func Start(recoveryJob *GameOrderRecoveryJob) *robfigcron.Cron {
+	c := robfigcron.New(
+		robfigcron.WithChain(
+			robfigcron.SkipIfStillRunning(robfigcron.DefaultLogger),
+			robfigcron.Recover(robfigcron.DefaultLogger),
+		),
+	)
+	if _, err := c.AddJob(config.Cfg.Cron.OrderRecover, recoveryJob); err != nil {
+		panic(err)
+	}
+	c.Start()
+	return c
 }
