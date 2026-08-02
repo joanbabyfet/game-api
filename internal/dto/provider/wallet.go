@@ -15,15 +15,26 @@ type SpinReq struct {
 	Token 		string `json:"token" binding:"required"` // JWT Token
 	
 	GameCode	string `json:"game_code" binding:"required"`
-	BetAmount	float64 `json:"bet_amount" binding:"required"`
-	RequestID	string `json:"request_id" binding:"required"`
+	BetAmount   float64 `json:"bet_amount"`
 	
+	RequestID	string `json:"request_id" binding:"required"`
+	FreeSpinID string  `json:"free_spin_id"` //是否免费旋转
+
 	DebugFail 	bool `json:"debug_fail"` //测试取消下注用
 }
 
 type SpinResp struct {
     Balance float64 `json:"balance"`
 	Currency string `json:"currency"`
+
+	RoundID   string  `json:"round_id"`
+	WinAmount float64 `json:"win_amount"`
+	SpinType  uint8   `json:"spin_type"`
+
+	FreeSpinID          string `json:"free_spin_id,omitempty"`
+	FreeSpinIndex       uint32 `json:"free_spin_index,omitempty"`
+	FreeSpinTotalCount  uint32 `json:"free_spin_total_count,omitempty"`
+	FreeSpinRemainCount uint32 `json:"free_spin_remain_count,omitempty"`
 }
 
 // ChangeBalanceReq 钱包余额变更请求

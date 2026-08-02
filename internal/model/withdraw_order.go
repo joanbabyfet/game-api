@@ -1,21 +1,21 @@
 package model
 
-// 提现订单状态
+// 提现注单状态
 const (
 	WithdrawOrderStatusPending int8 = 0 // 待处理
 	WithdrawOrderStatusSuccess int8 = 1 // 成功
 	WithdrawOrderStatusFailed  int8 = 2 // 失败
 )
 
-// WithdrawOrder 提现订单
+// WithdrawOrder 提现注单
 type WithdrawOrder struct {
 	// 主键
 	ID uint64 `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 
-	// 提现订单号
+	// 提现注单号
 	OrderNo string `gorm:"column:order_no;size:64" json:"order_no"`
 
-	// 第三方订单号
+	// 第三方注单号
 	ThirdOrderNo string `gorm:"column:third_order_no;size:64" json:"third_order_no"`
 
 	// 玩家ID

@@ -82,7 +82,7 @@ func (r *FreeSpinRepository) GetByFreeSpinID(freeSpinID string) (*model.FreeSpin
 	return &freeSpin, nil
 }
 
-// GetByTriggerOrderNo 根据触发订单查询
+// GetByTriggerOrderNo 根据触发注单查询
 func (r *FreeSpinRepository) GetByTriggerOrderNo(orderNo string) (*model.FreeSpin, error) {
 
 	var freeSpin model.FreeSpin

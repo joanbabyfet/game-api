@@ -30,6 +30,8 @@ type SpinReq struct {
 	GameId        uint32                 `protobuf:"varint,5,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	BetAmount     int64                  `protobuf:"varint,6,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
 	Currency      string                 `protobuf:"bytes,7,opt,name=currency,proto3" json:"currency,omitempty"`
+	SpinType      uint32                 `protobuf:"varint,8,opt,name=spin_type,json=spinType,proto3" json:"spin_type,omitempty"`
+	FreeSpinId    string                 `protobuf:"bytes,9,opt,name=free_spin_id,json=freeSpinId,proto3" json:"free_spin_id,omitempty"`
 	DebugFail     bool                   `protobuf:"varint,99,opt,name=debug_fail,json=debugFail,proto3" json:"debug_fail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -114,6 +116,20 @@ func (x *SpinReq) GetCurrency() string {
 	return ""
 }
 
+func (x *SpinReq) GetSpinType() uint32 {
+	if x != nil {
+		return x.SpinType
+	}
+	return 0
+}
+
+func (x *SpinReq) GetFreeSpinId() string {
+	if x != nil {
+		return x.FreeSpinId
+	}
+	return ""
+}
+
 func (x *SpinReq) GetDebugFail() bool {
 	if x != nil {
 		return x.DebugFail
@@ -122,11 +138,18 @@ func (x *SpinReq) GetDebugFail() bool {
 }
 
 type SpinResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	RoundId       string                 `protobuf:"bytes,2,opt,name=round_id,json=roundId,proto3" json:"round_id,omitempty"`
-	Balance       int64                  `protobuf:"varint,3,opt,name=balance,proto3" json:"balance,omitempty"`
-	WinAmount     int64                  `protobuf:"varint,4,opt,name=win_amount,json=winAmount,proto3" json:"win_amount,omitempty"`
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo             string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	RoundId             string                 `protobuf:"bytes,2,opt,name=round_id,json=roundId,proto3" json:"round_id,omitempty"`
+	Balance             int64                  `protobuf:"varint,3,opt,name=balance,proto3" json:"balance,omitempty"`
+	WinAmount           int64                  `protobuf:"varint,4,opt,name=win_amount,json=winAmount,proto3" json:"win_amount,omitempty"`
+	SpinType            uint32                 `protobuf:"varint,5,opt,name=spin_type,json=spinType,proto3" json:"spin_type,omitempty"`
+	FreeSpinId          string                 `protobuf:"bytes,6,opt,name=free_spin_id,json=freeSpinId,proto3" json:"free_spin_id,omitempty"`
+	FreeSpinIndex       uint32                 `protobuf:"varint,7,opt,name=free_spin_index,json=freeSpinIndex,proto3" json:"free_spin_index,omitempty"`
+	FreeSpinTotalCount  uint32                 `protobuf:"varint,8,opt,name=free_spin_total_count,json=freeSpinTotalCount,proto3" json:"free_spin_total_count,omitempty"`
+	FreeSpinRemainCount uint32                 `protobuf:"varint,9,opt,name=free_spin_remain_count,json=freeSpinRemainCount,proto3" json:"free_spin_remain_count,omitempty"`
+	// Free Spin 实际使用的基准下注额, 由 Skynet 从 free_spin.bet_amount 取得，再返回给 Provider
+	BetAmount     int64 `protobuf:"varint,10,opt,name=bet_amount,json=betAmount,proto3" json:"bet_amount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,12 +212,54 @@ func (x *SpinResp) GetWinAmount() int64 {
 	return 0
 }
 
+func (x *SpinResp) GetSpinType() uint32 {
+	if x != nil {
+		return x.SpinType
+	}
+	return 0
+}
+
+func (x *SpinResp) GetFreeSpinId() string {
+	if x != nil {
+		return x.FreeSpinId
+	}
+	return ""
+}
+
+func (x *SpinResp) GetFreeSpinIndex() uint32 {
+	if x != nil {
+		return x.FreeSpinIndex
+	}
+	return 0
+}
+
+func (x *SpinResp) GetFreeSpinTotalCount() uint32 {
+	if x != nil {
+		return x.FreeSpinTotalCount
+	}
+	return 0
+}
+
+func (x *SpinResp) GetFreeSpinRemainCount() uint32 {
+	if x != nil {
+		return x.FreeSpinRemainCount
+	}
+	return 0
+}
+
+func (x *SpinResp) GetBetAmount() int64 {
+	if x != nil {
+		return x.BetAmount
+	}
+	return 0
+}
+
 var File_slot_proto protoreflect.FileDescriptor
 
 const file_slot_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"slot.proto\x12\x04slot\"\xe3\x01\n" +
+	"slot.proto\x12\x04slot\"\xa2\x02\n" +
 	"\aSpinReq\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
@@ -204,15 +269,27 @@ const file_slot_proto_rawDesc = "" +
 	"\agame_id\x18\x05 \x01(\rR\x06gameId\x12\x1d\n" +
 	"\n" +
 	"bet_amount\x18\x06 \x01(\x03R\tbetAmount\x12\x1a\n" +
-	"\bcurrency\x18\a \x01(\tR\bcurrency\x12\x1d\n" +
+	"\bcurrency\x18\a \x01(\tR\bcurrency\x12\x1b\n" +
+	"\tspin_type\x18\b \x01(\rR\bspinType\x12 \n" +
+	"\ffree_spin_id\x18\t \x01(\tR\n" +
+	"freeSpinId\x12\x1d\n" +
 	"\n" +
-	"debug_fail\x18c \x01(\bR\tdebugFail\"y\n" +
+	"debug_fail\x18c \x01(\bR\tdebugFail\"\xe7\x02\n" +
 	"\bSpinResp\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x19\n" +
 	"\bround_id\x18\x02 \x01(\tR\aroundId\x12\x18\n" +
 	"\abalance\x18\x03 \x01(\x03R\abalance\x12\x1d\n" +
 	"\n" +
-	"win_amount\x18\x04 \x01(\x03R\twinAmountB\x1eZ\x1cgame-api/proto/slotpb;slotpbb\x06proto3"
+	"win_amount\x18\x04 \x01(\x03R\twinAmount\x12\x1b\n" +
+	"\tspin_type\x18\x05 \x01(\rR\bspinType\x12 \n" +
+	"\ffree_spin_id\x18\x06 \x01(\tR\n" +
+	"freeSpinId\x12&\n" +
+	"\x0ffree_spin_index\x18\a \x01(\rR\rfreeSpinIndex\x121\n" +
+	"\x15free_spin_total_count\x18\b \x01(\rR\x12freeSpinTotalCount\x123\n" +
+	"\x16free_spin_remain_count\x18\t \x01(\rR\x13freeSpinRemainCount\x12\x1d\n" +
+	"\n" +
+	"bet_amount\x18\n" +
+	" \x01(\x03R\tbetAmountB\x1eZ\x1cgame-api/proto/slotpb;slotpbb\x06proto3"
 
 var (
 	file_slot_proto_rawDescOnce sync.Once

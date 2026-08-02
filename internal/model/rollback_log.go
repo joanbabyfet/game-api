@@ -25,7 +25,7 @@ type RollbackLog struct {
 	// 回滚单号
 	RollbackNo string `gorm:"column:rollback_no;size:64" json:"rollback_no"`
 
-	// 原始订单号
+	// 原始注单号
 	OrderNo string `gorm:"column:order_no;size:64" json:"order_no"`
 
 	// 局号

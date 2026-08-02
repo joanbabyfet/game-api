@@ -42,7 +42,7 @@ func (s *RequestLogService) GetByRequestID(requestID string) (*model.RequestLog,
 	return s.repo.GetByRequestID(requestID)
 }
 
-// GetByOrderNo 根据订单号查询
+// GetByOrderNo 根据注单号查询
 func (s *RequestLogService) GetByOrderNo(orderNo string) ([]model.RequestLog, error) {
 	return s.repo.GetByOrderNo(orderNo)
 }

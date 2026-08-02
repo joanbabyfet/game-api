@@ -7,7 +7,7 @@ import (
 	"game-api/proto/slotpb"
 )
 
-// SlotAdapter slot适配器
+// SlotAdapter slot适配器 (Adapter 只是 RPC 封装)
 type SlotAdapter struct {
 	client *skynet.Client
 }
@@ -25,6 +25,18 @@ func (a *SlotAdapter) Spin(ctx context.Context, req *slotpb.SpinReq) (*slotpb.Sp
 	resp := new(slotpb.SpinResp)
 
 	if err := a.client.Call(ctx, skynet.CmdSpin, req, resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// FreeSpin 免费旋转
+func (a *SlotAdapter) FreeSpin(ctx context.Context, req *slotpb.SpinReq) (*slotpb.SpinResp, error) {
+
+	resp := new(slotpb.SpinResp)
+
+	if err := a.client.Call(ctx, skynet.CmdFreeSpin, req, resp); err != nil {
 		return nil, err
 	}
 

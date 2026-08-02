@@ -6,6 +6,7 @@ import (
 	"game-api/internal/model"
 	"game-api/pkg"
 	"log"
+	"strings"
 )
 
 //查玩家余额
@@ -76,7 +77,13 @@ func (c *Client) Bet(ctx context.Context, baseURL string, agent *model.Agent, pl
 	var resp mock.BetResp
 	// 调用 Operator API
 	if err := c.post(ctx, baseURL+"/bet", req, &resp); err != nil {
-		return nil, err
+		switch {
+		case strings.Contains(err.Error(), "insufficient balance"):
+			return nil, pkg.ErrInsufficientBalance
+
+		default:
+			return nil, err
+		}
 	}
 
 	log.Printf("====== Operator Bet Response ======")

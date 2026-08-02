@@ -42,7 +42,7 @@ func (s *FreeSpinService) GetByFreeSpinID(freeSpinID string) (*model.FreeSpin, e
 	return s.repo.GetByFreeSpinID(freeSpinID)
 }
 
-// GetByTriggerOrderNo 根据触发订单查询
+// GetByTriggerOrderNo 根据触发注单查询
 func (s *FreeSpinService) GetByTriggerOrderNo(orderNo string) (*model.FreeSpin, error) {
 	return s.repo.GetByTriggerOrderNo(orderNo)
 }

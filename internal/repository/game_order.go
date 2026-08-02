@@ -130,7 +130,7 @@ func (r *GameOrderRepository) GetByID(id uint64) (*model.GameOrder, error) {
 	return &order, nil
 }
 
-// GetByOrderNo 根据订单号查询
+// GetByOrderNo 根据注单号查询
 func (r *GameOrderRepository) GetByOrderNo(orderNo string) (*model.GameOrder, error) {
 
 	var order model.GameOrder
@@ -184,7 +184,7 @@ func (r *GameOrderRepository) WithTx(tx *gorm.DB) *GameOrderRepository {
 	}
 }
 
-// GetByOrderNoForUpdate 根据订单号查询并加行锁
+// GetByOrderNoForUpdate 根据注单号查询并加行锁
 func (r *GameOrderRepository) GetByOrderNoForUpdate(
 	ctx context.Context,
 	orderNo string,
@@ -224,7 +224,7 @@ func (r *GameOrderRepository) Rollback(
 // 使用：
 // WHERE id = ? AND status = ?
 //
-// 可以防止并发请求把订单状态覆盖掉。
+// 可以防止并发请求把注单状态覆盖掉。
 func (r *GameOrderRepository) UpdateStatus(
 	ctx context.Context,
 	orderID uint64,
@@ -251,7 +251,7 @@ func (r *GameOrderRepository) UpdateStatus(
 	}
 
 	if result.RowsAffected == 0 {
-		// 先检查订单是否存在，区分“不存在”和“状态已经变化”。
+		// 先检查注单是否存在，区分“不存在”和“状态已经变化”。
 		var order model.GameOrder
 
 		err := r.db.WithContext(ctx).
@@ -281,9 +281,14 @@ func (r *GameOrderRepository) UpdateGameResult(
 	ctx context.Context,
 	orderID uint64,
 	roundID string,
+	betAmount int64,
 	winAmount int64,
 	profit int64,
+	spinType uint8,
+	freeSpinID string,
+	freeSpinIndex uint32,
 ) error {
+
 	now := time.Now().Unix()
 
 	result := r.db.WithContext(ctx).
@@ -294,11 +299,15 @@ func (r *GameOrderRepository) UpdateGameResult(
 			model.OrderStatusBetSuccess,
 		).
 		Updates(map[string]interface{}{
-			"round_id":    roundID,
-			"win_amount":  winAmount,
-			"profit":      profit,
-			"status":      model.OrderStatusWaitSettle,
-			"update_time": now,
+			"round_id":         roundID,
+			"bet_amount":       betAmount,
+			"win_amount":       winAmount,
+			"profit":           profit,
+			"spin_type":        spinType,
+			"free_spin_id":     freeSpinID,
+			"free_spin_index":  freeSpinIndex,
+			"status":           model.OrderStatusWaitSettle,
+			"update_time":      now,
 		})
 
 	if result.Error != nil {
@@ -315,6 +324,7 @@ func (r *GameOrderRepository) UpdateGameResult(
 func (r *GameOrderRepository) UpdateSettled(
 	ctx context.Context,
 	orderID uint64,
+	balanceBefore int64,
 	balanceAfter int64,
 	currency string,
 ) error {
@@ -328,10 +338,75 @@ func (r *GameOrderRepository) UpdateSettled(
 			model.OrderStatusWaitSettle,
 		).
 		Updates(map[string]interface{}{
+			"balance_before": balanceBefore,
+			"balance_after":  balanceAfter,
+			"currency":       currency,
+			"status":         model.OrderStatusSettled,
+			"settle_time":    now,
+			"update_time":    now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+
+	return nil
+}
+
+func (r *GameOrderRepository) UpdateBetSuccess(
+	ctx context.Context,
+	orderID uint64,
+	balanceBefore int64,
+) error {
+	now := time.Now().Unix()
+
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where(
+			"id = ? AND status = ?",
+			orderID,
+			model.OrderStatusPending,
+		).
+		Updates(map[string]interface{}{
+			"balance_before": balanceBefore,
+			"status":         model.OrderStatusBetSuccess,
+			"update_time":    now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+
+	return nil
+}
+
+func (r *GameOrderRepository) UpdateRolledBack(
+	ctx context.Context,
+	orderID uint64,
+	balanceAfter int64,
+	currency string,
+) error {
+	now := time.Now().Unix()
+
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where(
+			"id = ? AND status = ?",
+			orderID,
+			model.OrderStatusWaitRollback,
+		).
+		Updates(map[string]interface{}{
 			"balance_after": balanceAfter,
 			"currency":      currency,
-			"status":        model.OrderStatusSettled,
-			"settle_time":   now,
+			"status":        model.OrderStatusRolledBack,
 			"update_time":   now,
 		})
 

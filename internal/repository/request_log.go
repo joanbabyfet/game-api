@@ -86,7 +86,7 @@ func (r *RequestLogRepository) GetByRequestID(requestID string) (*model.RequestL
 	return &log, nil
 }
 
-// GetByOrderNo 根据订单号查询
+// GetByOrderNo 根据注单号查询
 func (r *RequestLogRepository) GetByOrderNo(orderNo string) ([]model.RequestLog, error) {
 
 	var logs []model.RequestLog

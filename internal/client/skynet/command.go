@@ -16,6 +16,7 @@ const (
 	CmdKick 		uint16 = 1002
 
     CmdSpin         uint16 = 2001
+	CmdFreeSpin     uint16 = 2002
 
     CmdPing         uint16 = 9999
 	

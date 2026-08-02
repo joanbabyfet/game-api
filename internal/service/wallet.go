@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"game-api/internal/adapter"
 	"game-api/internal/client/operator"
+	"game-api/internal/client/skynet"
 	"game-api/internal/dto/provider"
 	"game-api/internal/model"
 	"game-api/internal/repository"
@@ -135,14 +136,12 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	// 1. 解析 JWT
 	claims, err := pkg.ParseToken(req.Token)
 	if err != nil {
-		log.Printf("ParseToken error: %+v", err)
 		return nil, pkg.ErrUnauthorized
 	}
 
 	// 2. 查询游戏
 	game, err := s.gameRepo.GetByCode(req.GameCode)
 	if err != nil {
-		log.Printf("GetByCode error: %+v", err)
 		return nil, pkg.ErrGameNotFound
 	}
 
@@ -152,10 +151,32 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		return nil, err
 	}
 
+	//是否免费旋转
+	isFreeSpin := req.FreeSpinID != ""
+	spinType := model.SpinTypeNormal
+	if isFreeSpin {
+		spinType = model.SpinTypeFreeSpin
+	}
+
+	// 普通 Spin 必须有下注金额
+	if !isFreeSpin && req.BetAmount <= 0 {
+			return nil, pkg.NewError(
+					pkg.INVALID_PARAM,
+					"bet_amount must be greater than zero",
+			)
+	}
+	// Free Spin 不接受正数或负数下注额
+	if isFreeSpin && req.BetAmount != 0 {
+			return nil, pkg.NewError(
+					pkg.INVALID_PARAM,
+					"bet_amount must be zero or omitted for free spin",
+			)
+	}
+
 	// 4. request_id 幂等检查
 	order, err := s.orderRepo.GetByRequestID(ctx, req.RequestID)
 	if err == nil {
-		// 已存在订单，直接回放，不重新下注
+		// 已存在注单，直接回放，不重新下注
 		return s.replaySpin(order)
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -167,107 +188,137 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	requestID := req.RequestID //幂等(由 Provider API 传入)
 	orderNo := pkg.GenOrderNo() //注單号
 
-	//5. 第一次请求，开始创建订单
+	// 普通 Spin 的下注金额来自请求
+	// Free Spin 的基准下注金额暂时为 0，等 Skynet 校验 free_spin 后返回真实基准下注额
+	betAmount := int64(0)
+	orderStatus := model.OrderStatusPending
+
+	if !isFreeSpin {
+		betAmount = pkg.ToMoney(req.BetAmount)
+	} else {
+		// Free Spin 没有 Operator Bet，直接进入可执行游戏状态
+		orderStatus = model.OrderStatusBetSuccess
+	}
+
+	//5. 第一次请求，开始创建注单
 	order = &model.GameOrder{
 		RequestID:  requestID,
 		OrderNo:    orderNo,
 		UID:        claims.UID,
 		AgentID:    claims.AgentID,
 		GameID:     game.ID,
-		BetAmount:  pkg.ToMoney(req.BetAmount),
+		BetAmount:  betAmount,
 		WinAmount:  0,
 		Profit:     0,
 		Currency:   claims.Currency,
-		Status:     model.OrderStatusPending, //Provider 已创建 game_order，Operator 下注结果尚未确认
+		SpinType:   spinType,
+		FreeSpinID:   req.FreeSpinID,
+		FreeSpinIndex: 0,
+		Status:     orderStatus, //Provider 已创建 game_order，Operator 下注结果尚未确认
 		CreateTime: time.Now().Unix(),
 	}
 	if err := s.orderRepo.Create(ctx, order); err != nil {
 		return nil, err
 	}
 
-	log.Printf("========== Provider Spin Start ==========")
-	log.Printf("RequestID : %s", requestID)
-	log.Printf("OrderNo   : %s", orderNo)
-	log.Printf("PlayerID  : %s", claims.PlayerID)
-	log.Printf("UID       : %d", claims.UID)
-	log.Printf("AgentID   : %d", claims.AgentID)
-	log.Printf("GameID    : %d", game.ID)
-	log.Printf("GameCode  : %s", game.GameCode)
-	log.Printf("BetAmount : %v", req.BetAmount)
-	log.Printf("Currency  : %s", claims.Currency)
+	log.Printf(
+		"[Spin] start request_id=%s order_no=%s uid=%d game=%s spin_type=%d",
+		requestID,
+		orderNo,
+		claims.UID,
+		game.GameCode,
+		spinType,
+	)
 
-	// 6. Operator 扣款
+	// 6. 普通 Spin 才调用 Operator 扣款
 	//
 	// 单一钱包模式下：
 	// Provider 不直接修改本地钱包余额，
 	// 而是调用 Operator 的下注接口扣除玩家余额。
-	log.Printf(
-		"Operator Bet start: request_id=%s order_no=%s player=%s amount=%v",
-		requestID,
-		orderNo,
-		claims.PlayerID,
-		req.BetAmount,
-	)
-	betResp, err := s.operatorClient.Bet(
-		ctx,
-		agent.OperatorURL,
-		agent,
-		claims.PlayerID,
-		orderNo,
-		game.GameCode,
-		req.BetAmount,
-	)
-	if err != nil {
-		log.Printf(
-			"Operator Bet error: request_id=%s order_no=%s player=%s err=%+v",
-			requestID,
-			orderNo,
+	if !isFreeSpin {
+		betResp, err := s.operatorClient.Bet(
+			ctx,
+			agent.OperatorURL,
+			agent,
 			claims.PlayerID,
-			err,
-		)
-		return nil, err
-	}
-
-	if betResp == nil {
-		log.Printf(
-			"Operator Bet returned nil response: request_id=%s order_no=%s",
-			requestID,
 			orderNo,
+			game.GameCode,
+			req.BetAmount,
 		)
+		if err != nil {
+			log.Printf(
+				"[Bet] failed request_id=%s order_no=%s err=%v",
+				requestID,
+				orderNo,
+				err,
+			)
 
-		return nil, pkg.NewError(
-			pkg.OPERATOR_BET_FAILED,
-			"operator bet returned nil response",
-		)
-	}
+			// 明确业务失败，例如余额不足
+			if errors.Is(err, pkg.ErrInsufficientBalance) {
+				if updateErr := s.orderRepo.UpdateStatus(
+					ctx,
+					order.ID,
+					model.OrderStatusPending,
+					model.OrderStatusFailed,
+				); updateErr != nil {
+					log.Printf(
+						"[Order] update failed status error request_id=%s order_no=%s err=%v",
+						requestID,
+						orderNo,
+						updateErr,
+					)
 
-	log.Printf(
-		"Operator Bet success: request_id=%s order_no=%s resp=%+v",
-		requestID,
-		orderNo,
-		betResp,
-	)
+					return nil, pkg.ErrOrderUpdateFailed
+				}
 
-	//Bet 成功后更新状态
-	if err := s.orderRepo.UpdateStatus(
-		ctx,
-		order.ID,
-		model.OrderStatusPending,
-		model.OrderStatusBetSuccess,
-	); err != nil {
+				order.Status = model.OrderStatusFailed
+			}
+
+			// 网络超时、连接中断等结果未知，先保持 Pending
+			return nil, err
+		}
+
+		if betResp == nil {
+			return nil, pkg.NewError(
+				pkg.OPERATOR_BET_FAILED,
+				"operator bet returned nil response",
+			)
+		}
+
+		// Operator Bet 返回的是扣款后的余额。
+		// 因此：扣款前余额 = 扣款后余额 + 下注金额。
+		balanceBefore := pkg.ToMoney(betResp.Balance) + order.BetAmount
+
+		// 更新注单为 扣款成功
+		if err := s.orderRepo.UpdateBetSuccess(
+			ctx,
+			order.ID,
+			balanceBefore,
+		); err != nil {
+			log.Printf(
+				"[Order] update bet success failed request_id=%s order_no=%s err=%v",
+				requestID,
+				orderNo,
+				err,
+			)
+
+			return nil, pkg.ErrOrderUpdateFailed
+		}
+
+		order.BalanceBefore = balanceBefore
+		order.Status = model.OrderStatusBetSuccess
+
 		log.Printf(
-			"Update order status failed: request_id=%s order_no=%s from=%d to=%d err=%+v",
-			requestID,
+			"[Bet] success order_no=%s balance=%v",
 			orderNo,
-			model.OrderStatusPending,
-			model.OrderStatusBetSuccess,
-			err,
+			betResp.Balance,
 		)
-
-		return nil, pkg.ErrOrderUpdateFailed
 	}
 
-	order.Status = model.OrderStatusBetSuccess
+	pbBetAmount := order.BetAmount
+	if isFreeSpin {
+		pbBetAmount = 0
+	}
 
 	// 7. 调用 Skynet 执行游戏逻辑
 	pbReq := &slotpb.SpinReq{
@@ -276,31 +327,70 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		Uid:       claims.UID,
 		AgentId:   claims.AgentID,
 		GameId:    game.ID,
-		BetAmount: pkg.ToMoney(req.BetAmount),
+		BetAmount: pbBetAmount,
 		Currency:  claims.Currency,
+		SpinType:  uint32(spinType),
+		FreeSpinId: req.FreeSpinID,
 		DebugFail: req.DebugFail, //测试取消下注用
 	}
-
-	log.Printf("========== Skynet Spin Request ==========")
-	log.Printf("RequestID : %s", pbReq.RequestId)
-	log.Printf("OrderNo   : %s", pbReq.OrderNo)
-	log.Printf("UID       : %d", pbReq.Uid)
-	log.Printf("AgentID   : %d", pbReq.AgentId)
-	log.Printf("GameID    : %d", pbReq.GameId)
-	log.Printf("BetAmount : %d", pbReq.BetAmount)
-	log.Printf("Currency  : %s", pbReq.Currency)
-	log.Printf("DebugFail : %v", pbReq.DebugFail)
-
-	spinResp, spinErr := s.slotAdapter.Spin(ctx, pbReq)
+	var (
+		spinResp *slotpb.SpinResp
+		spinErr  error
+	)
+	if isFreeSpin {
+		spinResp, spinErr = s.slotAdapter.FreeSpin(ctx, pbReq)
+	} else {
+		spinResp, spinErr = s.slotAdapter.Spin(ctx, pbReq)
+	}
 	if spinErr != nil {
 		log.Printf(
-			"Skynet Spin error: request_id=%s order_no=%s err=%+v",
+			"[Skynet] failed request_id=%s order_no=%s err=%v",
 			requestID,
 			orderNo,
 			spinErr,
 		)
 
-		// Skynet 明确失败，订单进入待回滚状态
+		// Free Spin 没有扣钱，不执行 Operator Rollback。
+		if isFreeSpin {
+			var rpcErr *skynet.Error
+
+			// 非业务错误（例如网络超时），保持 BetSuccess，方便后续幂等恢复。
+			if !errors.As(spinErr, &rpcErr) {
+				return nil, spinErr
+			}
+
+			switch rpcErr.Code {
+			case pkg.FREE_SPIN_NOT_FOUND,
+				pkg.FREE_SPIN_FINISHED,
+				pkg.FREE_SPIN_OWNER_ERROR,
+				pkg.FREE_SPIN_GAME_ERROR:
+
+				if updateErr := s.orderRepo.UpdateStatus(
+					ctx,
+					order.ID,
+					model.OrderStatusBetSuccess,
+					model.OrderStatusFailed,
+				); updateErr != nil {
+
+					log.Printf(
+						"[Order] update free spin failed request_id=%s order_no=%s order_id=%d err=%v",
+						requestID,
+						orderNo,
+						order.ID,
+						updateErr,
+					)
+
+					return nil, pkg.ErrOrderUpdateFailed
+				}
+
+				order.Status = model.OrderStatusFailed
+			}
+
+			return nil, spinErr
+		}
+
+		// 普通 Spin：这里仅适用于 Skynet 明确业务失败。
+		// TCP 超时等结果未知错误，不应立即回滚。
 		if err := s.orderRepo.UpdateStatus(
 			ctx,
 			order.ID,
@@ -308,7 +398,7 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 			model.OrderStatusWaitRollback,
 		); err != nil {
 			log.Printf(
-				"Update WaitRollback failed: request_id=%s order_no=%s err=%+v",
+				"[Order] update wait rollback failed request_id=%s order_no=%s err=%v",
 				requestID,
 				orderNo,
 				err,
@@ -320,7 +410,7 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		order.Status = model.OrderStatusWaitRollback
 
 		// Skynet 失败，回滚扣款
-		_, rollbackErr := s.operatorClient.Rollback(
+		rollbackResp, rollbackErr := s.operatorClient.Rollback(
 			ctx,
 			agent.OperatorURL,
 			agent,
@@ -331,25 +421,35 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		)
 		if rollbackErr != nil {
 			log.Printf(
-				"Operator rollback failed, order=%s player=%s err=%v",
+				"[Rollback] failed request_id=%s order_no=%s err=%v",
+				requestID,
 				orderNo,
-				claims.PlayerID,
 				rollbackErr,
 			)
 
-			// 状态保持 WaitRollback，Worker 后续重试
+			// 状态保持 WAIT_ROLLBACK，交给 Worker 重试
 			return nil, spinErr
 		}
 
+		if rollbackResp == nil {
+			// 状态保持 WAIT_ROLLBACK
+			return nil, pkg.NewError(
+				pkg.OPERATOR_ROLLBACK_FAILED,
+				"operator rollback returned nil response",
+			)
+		}
+
 		// Operator 回滚成功
-		if err := s.orderRepo.UpdateStatus(
+		balanceAfter := pkg.ToMoney(rollbackResp.Balance)
+		// 更新注单状态为 5=已回滚
+		if err := s.orderRepo.UpdateRolledBack(
 			ctx,
 			order.ID,
-			model.OrderStatusWaitRollback,
-			model.OrderStatusRolledBack,
+			balanceAfter,
+			rollbackResp.Currency,
 		); err != nil {
 			log.Printf(
-				"Update RolledBack failed: request_id=%s order_no=%s err=%+v",
+				"[Order] update rolled back failed request_id=%s order_no=%s err=%v",
 				requestID,
 				orderNo,
 				err,
@@ -358,34 +458,23 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 			return nil, pkg.ErrOrderUpdateFailed
 		}
 
+		order.BalanceAfter = balanceAfter
+		order.Currency = rollbackResp.Currency
 		order.Status = model.OrderStatusRolledBack
 
 		return nil, spinErr
 	}
 
 	if spinResp == nil {
-		log.Printf(
-			"Skynet Spin returned nil response: request_id=%s order_no=%s",
-			requestID,
-			orderNo,
-		)
-
 		return nil, pkg.NewError(
 			pkg.SPIN_FAILED,
 			"skynet spin returned nil response",
 		)
 	}
 
-	// 确认 spinResp 不为 nil 后，才访问里面的字段
-	log.Printf("========== Skynet Spin Response ==========")
-	log.Printf("RequestID : %s", requestID)
-	log.Printf("OrderNo   : %s", orderNo)
-	log.Printf("WinAmount : %d", spinResp.WinAmount)
-	log.Printf("RawResp   : %+v", spinResp)
-
 	if spinResp.WinAmount < 0 {
 		log.Printf(
-			"Invalid win amount: request_id=%s order_no=%s win_amount=%d",
+			"[Skynet] invalid win amount request_id=%s order_no=%s win_amount=%d",
 			requestID,
 			orderNo,
 			spinResp.WinAmount,
@@ -393,26 +482,60 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		return nil, pkg.ErrInvalidParam
 	}
 
-	// 玩家净输赢： 中奖金额 - 下注金额
-	profit := spinResp.WinAmount - order.BetAmount
+	log.Printf(
+		"[Skynet] success order_no=%s round_id=%s win_amount=%d",
+		orderNo,
+		spinResp.RoundId,
+		spinResp.WinAmount,
+	)
+
+	if isFreeSpin {
+		if spinResp.FreeSpinId != req.FreeSpinID {
+			return nil, pkg.NewError(
+				pkg.SPIN_FAILED,
+				"free_spin_id mismatch",
+			)
+		}
+
+		if spinResp.BetAmount <= 0 {
+			return nil, pkg.NewError(
+				pkg.SPIN_FAILED,
+				"invalid free spin bet amount",
+			)
+		}
+
+		// Free Spin 基准下注金额由 Skynet 决定
+		order.BetAmount = spinResp.BetAmount
+		order.FreeSpinIndex = spinResp.FreeSpinIndex
+	}
+
+	// 普通 Spin 净输赢 = 中奖 - 实际下注
+	// Free Spin 没有扣款，所以净输赢 = 中奖金额
+	profit := spinResp.WinAmount
+	if !isFreeSpin {
+		profit = spinResp.WinAmount - order.BetAmount
+	}
 
 	// 保存 Skynet 游戏结果，并进入待派奖状态
 	if err := s.orderRepo.UpdateGameResult(
 		ctx,
 		order.ID,
 		spinResp.RoundId,
+		order.BetAmount,
 		spinResp.WinAmount,
 		profit,
+		spinType,
+		spinResp.FreeSpinId,
+		spinResp.FreeSpinIndex,
 	); err != nil {
 		log.Printf(
-			"Update game result failed: request_id=%s order_no=%s round_id=%s err=%+v",
+			"[Order] update game result failed request_id=%s order_no=%s round_id=%s err=%v",
 			requestID,
 			orderNo,
 			spinResp.RoundId,
 			err,
 		)
-
-		// Skynet 已经产生结果，不能重新执行 Spin
+		// 可以使用相同 request_id 重调 Skynet，由 Skynet 回放。
 		return nil, pkg.ErrOrderUpdateFailed
 	}
 
@@ -421,19 +544,14 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	order.Profit = profit
 	order.Status = model.OrderStatusWaitSettle
 
+	// 普通 Spin：派奖本局 win_amount
+	// Free Spin：同样派奖本次 Free Spin win_amount
 	winAmount := pkg.ToAmount(spinResp.WinAmount)
 
 	// 8. Operator 派奖
 	//
 	// 单一钱包模式下，派奖也由 Operator 修改玩家余额。
-	// orderNo 继续使用原下注订单号，作为该笔注单的关联标识。
-	log.Printf(
-		"Operator Settle start: request_id=%s order_no=%s player=%s win_amount=%v",
-		requestID,
-		orderNo,
-		claims.PlayerID,
-		winAmount,
-	)
+	// orderNo 继续使用原下注注单号，作为该笔注单的关联标识。
 	settleResp, err := s.operatorClient.Settle(
 		ctx,
 		agent.OperatorURL,
@@ -445,10 +563,9 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	)
 	if err != nil {
 		log.Printf(
-			"Operator Settle error: request_id=%s order_no=%s player=%s win_amount=%v err=%+v",
+			"[Settle] failed request_id=%s order_no=%s win_amount=%v err=%v",
 			requestID,
 			orderNo,
-			claims.PlayerID,
 			winAmount,
 			err,
 		)
@@ -456,39 +573,63 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		// 注意：
 		// Skynet 游戏结果已经产生，不能再取消下注。
 		//
-		// 此时应将订单标记为 WAIT_SETTLE，
+		// 此时应将注单标记为 WAIT_SETTLE，
 		// Worker 使用同一个 orderNo 和 winAmount 重试派彩。
 		//
-		// 不要重新执行 Spin，也不要重新生成订单号。
+		// 不要重新执行 Spin，也不要重新生成注单号。
 		return nil, err
 	}
 
 	if settleResp == nil {
-		log.Printf(
-			"Operator Settle returned nil response: request_id=%s order_no=%s",
-			requestID,
-			orderNo,
-		)
-
 		// 同样应该标记 WAIT_SETTLE，避免丢失派彩
-		return nil, pkg.ErrInvalidParam
+		return nil, pkg.NewError(
+			pkg.OPERATOR_SETTLE_FAILED,
+			"operator settle returned nil response",
+		)
 	}
 
-	log.Printf("========== Operator Settle Success ==========")
-	log.Printf("RequestID : %s", requestID)
-	log.Printf("OrderNo   : %s", orderNo)
-	log.Printf("Balance   : %v", settleResp.Balance)
-	log.Printf("Currency  : %s", settleResp.Currency)
+	log.Printf(
+		"[Settle] success order_no=%s balance=%v",
+		orderNo,
+		settleResp.Balance,
+	)
 
-	// 更新订单为 Settled
+	// 结算后余额
+	balanceAfter := pkg.ToMoney(settleResp.Balance)
+
+	// 普通 Spin：balance_before 已经在 Operator Bet 成功后写入。
+	// Free Spin：没有 Operator Bet，需要根据结算后余额反推执行前余额。
+	balanceBefore := order.BalanceBefore
+	if isFreeSpin {
+		balanceBefore = balanceAfter - spinResp.WinAmount
+	}
+
+	// 防御性检查，正常情况下不应该小于 0。
+	if balanceBefore < 0 {
+		log.Printf(
+			"[Settle] invalid balance before request_id=%s order_no=%s balance_after=%d win_amount=%d",
+			requestID,
+			orderNo,
+			balanceAfter,
+			spinResp.WinAmount,
+		)
+
+		return nil, pkg.NewError(
+			pkg.OPERATOR_SETTLE_FAILED,
+			"invalid balance before",
+		)
+	}
+
+	// 更新注单为 Settled
 	if err := s.orderRepo.UpdateSettled(
 		ctx,
 		order.ID,
-		pkg.ToMoney(settleResp.Balance),
+		balanceBefore,
+		balanceAfter,
 		settleResp.Currency,
 	); err != nil {
 		log.Printf(
-			"Update Settled failed: request_id=%s order_no=%s err=%+v",
+			"[Order] update settled failed request_id=%s order_no=%s err=%v",
 			requestID,
 			orderNo,
 			err,
@@ -497,7 +638,8 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		return nil, pkg.ErrOrderUpdateFailed
 	}
 
-	order.BalanceAfter = pkg.ToMoney(settleResp.Balance)
+	order.BalanceBefore = balanceBefore
+	order.BalanceAfter = balanceAfter
 	order.Currency = settleResp.Currency
 	order.Status = model.OrderStatusSettled
 
@@ -505,12 +647,22 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 		// 单一钱包模式下，最终余额和币种以 Operator 返回为准
 		Balance:  settleResp.Balance,
 		Currency: settleResp.Currency,
+		RoundID:             spinResp.RoundId,
+		WinAmount:           pkg.ToAmount(spinResp.WinAmount),
+		SpinType:            uint8(spinResp.SpinType),
+		FreeSpinID:          spinResp.FreeSpinId,
+		FreeSpinIndex:       spinResp.FreeSpinIndex,
+		FreeSpinTotalCount:  spinResp.FreeSpinTotalCount,
+		FreeSpinRemainCount: spinResp.FreeSpinRemainCount,
 	}
 
-	log.Printf("========== Provider Spin Success ==========")
-	log.Printf("RequestID : %s", requestID)
-	log.Printf("OrderNo   : %s", orderNo)
-	log.Printf("Response  : %+v", resp)
+	log.Printf(
+		"[Spin] success request_id=%s order_no=%s round_id=%s spin_type=%d",
+		requestID,
+		orderNo,
+		spinResp.RoundId,
+		spinType,
+	)
 
 	return resp, nil
 }
@@ -725,7 +877,7 @@ func (s *WalletService) subWithTx(
 	return after, nil
 }
 
-// Rollback 已结算或未结算订单回滚
+// Rollback 已结算或未结算注单回滚
 func (s *WalletService) Rollback(
 	ctx context.Context,
 	req *provider.RollbackReq,
@@ -739,7 +891,7 @@ func (s *WalletService) Rollback(
 		orderRepo := s.orderRepo.WithTx(tx)
 		rollbackLogRepo := s.rollbackLogRepo.WithTx(tx)
 
-		// 查询并锁定订单，防止并发重复回滚
+		// 查询并锁定注单，防止并发重复回滚
 		order, err := orderRepo.GetByOrderNoForUpdate(
 			ctx,
 			req.OrderNo,
@@ -774,7 +926,7 @@ func (s *WalletService) Rollback(
 			return nil
 		}
 
-		// 只有待结算、已结算订单可以回滚
+		// 只有待结算、已结算注单可以回滚
 		if order.Status != model.OrderStatusPending &&
 			order.Status != model.OrderStatusSettled {
 			return pkg.ErrOrderStatusInvalid
@@ -864,7 +1016,7 @@ func (s *WalletService) Rollback(
 			}
 		}
 
-		// 更新订单状态
+		// 更新注单状态
 		if err := orderRepo.Rollback(
 			ctx,
 			order.OrderNo,
@@ -1007,7 +1159,7 @@ func (s *WalletService) deleteWalletCache(
 // 当相同 request_id 再次请求时，不重新生成 order_no，
 // 不重新调用 Operator Bet，也不重新执行 Skynet Spin。
 //
-// 根据原订单状态返回原结果，或者提示订单仍在处理中。
+// 根据原注单状态返回原结果，或者提示注单仍在处理中。
 func (s *WalletService) replaySpin(
 	order *model.GameOrder,
 ) (*provider.SpinResp, error) {
@@ -1031,7 +1183,7 @@ func (s *WalletService) replaySpin(
 
 	switch order.Status {
 
-	// Provider 已创建订单，但 Operator 下注结果尚未确认。
+	// Provider 已创建注单，但 Operator 下注结果尚未确认。
 	case model.OrderStatusPending:
 		log.Printf(
 			"Spin replay: order is pending, request_id=%s order_no=%s",

@@ -46,7 +46,7 @@ func (s *GameOrderService) GetByID(id uint64) (*model.GameOrder, error) {
 	return s.repo.GetByID(id)
 }
 
-// GetByOrderNo 根据订单号查询
+// GetByOrderNo 根据注单号查询
 func (s *GameOrderService) GetByOrderNo(orderNo string) (*model.GameOrder, error) {
 	return s.repo.GetByOrderNo(orderNo)
 }

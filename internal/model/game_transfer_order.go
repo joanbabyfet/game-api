@@ -13,15 +13,15 @@ const (
 	GameTransferStatusFailed  int8 = 2 // 失败
 )
 
-// GameTransferOrder 游戏转账订单
+// GameTransferOrder 游戏转账注单
 type GameTransferOrder struct {
 	// 主键
 	ID uint64 `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
 
-	// 转账订单号
+	// 转账注单号
 	OrderNo string `gorm:"column:order_no;size:64" json:"order_no"`
 
-	// 第三方订单号
+	// 第三方注单号
 	ThirdOrderNo string `gorm:"column:third_order_no;size:64" json:"third_order_no"`
 
 	// 玩家ID

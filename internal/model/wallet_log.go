@@ -26,7 +26,7 @@ type WalletLog struct {
 	// 变动后余额（最小货币单位）
 	BalanceAfter int64 `gorm:"column:balance_after" json:"balance_after"`
 
-	// 关联订单号
+	// 关联注单号
 	RefOrderNo string `gorm:"column:ref_order_no;size:64" json:"ref_order_no"`
 
 	// 创建时间

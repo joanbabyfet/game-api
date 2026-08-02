@@ -44,6 +44,15 @@ type GameOrder struct {
 	// 回滚原因
 	RollbackReason string `gorm:"column:rollback_reason;size:100" json:"rollback_reason"`
 
+	// Spin 类型
+	SpinType uint8 `gorm:"column:spin_type" json:"spin_type"`
+
+	// Free Spin 批次ID
+	FreeSpinID string `gorm:"column:free_spin_id;size:64" json:"free_spin_id"`
+
+	// 第几次 Free Spin
+	FreeSpinIndex uint32 `gorm:"column:free_spin_index" json:"free_spin_index"`
+
 	// 状态
 	Status int8 `gorm:"column:status" json:"status"`
 
@@ -64,6 +73,14 @@ type GameOrder struct {
 func (GameOrder) TableName() string {
 	return "game_order"
 }
+
+// Spin 类型
+const (
+	SpinTypeNormal   uint8 = 1 // 普通 Spin
+	SpinTypeFreeSpin uint8 = 2 // Free Spin
+	SpinTypeBonus    uint8 = 3 // Bonus
+	SpinTypeRespin   uint8 = 4 // Respin
+)
 
 // 注单状态
 const (
