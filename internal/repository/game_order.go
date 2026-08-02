@@ -149,11 +149,11 @@ func (r *GameOrderRepository) ListRecoverable(
 ) ([]model.GameOrder, error) {
 	var orders []model.GameOrder
 	err := r.db.WithContext(ctx).
-		Where("status IN ?", []int8{
+		Where("(status IN ?) OR (status = ? AND wallet_mode = ?)", []int8{
 			model.OrderStatusBetSuccess,
 			model.OrderStatusWaitSettle,
 			model.OrderStatusWaitRollback,
-		}).
+		}, model.OrderStatusPending, model.WalletModeSingle).
 		Where("next_retry_time <= ?", now).
 		Where("locked_until <= ?", now).
 		Where("retry_count < ?", maxRetry).
@@ -169,13 +169,33 @@ func (r *GameOrderRepository) ClaimRecovery(ctx context.Context, orderID uint64,
 	result := r.db.WithContext(ctx).
 		Model(&model.GameOrder{}).
 		Where("id = ? AND locked_until <= ?", orderID, now).
-		Where("status IN ?", []int8{
+		Where("(status IN ?) OR (status = ? AND wallet_mode = ?)", []int8{
 			model.OrderStatusBetSuccess,
 			model.OrderStatusWaitSettle,
 			model.OrderStatusWaitRollback,
-		}).
+		}, model.OrderStatusPending, model.WalletModeSingle).
 		Update("locked_until", lockedUntil)
 	return result.RowsAffected == 1, result.Error
+}
+
+func (r *GameOrderRepository) MarkPendingRolledBack(ctx context.Context, orderID uint64, balanceAfter int64, currency string) error {
+	now := time.Now().Unix()
+	result := r.db.WithContext(ctx).Model(&model.GameOrder{}).
+		Where("id = ? AND status = ?", orderID, model.OrderStatusPending).
+		Updates(map[string]any{
+			"status":        model.OrderStatusRolledBack,
+			"balance_after": balanceAfter,
+			"currency":      currency,
+			"rollback_time": now,
+			"update_time":   now,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+	return nil
 }
 
 func (r *GameOrderRepository) MarkRetryFailed(ctx context.Context, orderID uint64, lastError string, nextRetryTime int64) error {

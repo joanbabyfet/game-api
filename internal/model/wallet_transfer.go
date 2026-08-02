@@ -66,5 +66,5 @@ type WalletTransfer struct {
 
 // TableName 表名
 func (WalletTransfer) TableName() string {
-	return "game_transfer_order"
+	return "wallet_transfer"
 }

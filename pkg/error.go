@@ -43,4 +43,7 @@ var (
 	ErrTransferOutFailed       = NewError(TRANSFER_OUT_FAILED, "transfer out failed")
 	ErrWalletModeInvalid       = NewError(WALLET_MODE_INVALID, "wallet mode invalid")
 	ErrCurrencyMismatch        = NewError(CURRENCY_MISMATCH, "currency mismatch")
+	ErrOperatorOrderNotFound   = NewError(OPERATOR_ORDER_NOT_FOUND, "operator order not found")
+	ErrOperatorOrderConflict   = NewError(OPERATOR_ORDER_CONFLICT, "operator order conflict")
+	ErrOperatorOrderInvalid    = NewError(OPERATOR_ORDER_INVALID, "operator order status invalid")
 )

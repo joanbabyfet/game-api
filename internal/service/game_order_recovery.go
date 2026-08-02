@@ -17,6 +17,8 @@ func (s *WalletService) RecoverOrder(ctx context.Context, order *model.GameOrder
 		return pkg.ErrOrderNotFound
 	}
 	switch order.Status {
+	case model.OrderStatusPending:
+		return s.recoverPendingRollback(ctx, order)
 	case model.OrderStatusBetSuccess:
 		return s.recoverGameResult(ctx, order)
 	case model.OrderStatusWaitSettle:
@@ -26,6 +28,30 @@ func (s *WalletService) RecoverOrder(ctx context.Context, order *model.GameOrder
 	default:
 		return nil
 	}
+}
+
+// recoverPendingRollback 通过 Operator 的幂等取消语义消除下注结果不确定性。
+func (s *WalletService) recoverPendingRollback(ctx context.Context, order *model.GameOrder) error {
+	if order.WalletMode != model.WalletModeSingle {
+		return pkg.ErrWalletModeInvalid
+	}
+	agent, user, game, err := s.recoveryEntities(order)
+	if err != nil {
+		return err
+	}
+	resp, err := s.operatorClient.Rollback(
+		ctx, agent.OperatorURL, agent, user.Username, order.OrderNo,
+		game.GameCode, pkg.ToAmount(order.BetAmount),
+	)
+	if err != nil {
+		return err
+	}
+	if resp == nil {
+		return pkg.NewError(pkg.OPERATOR_ROLLBACK_FAILED, "operator rollback returned nil response")
+	}
+	return s.orderRepo.MarkPendingRolledBack(
+		ctx, order.ID, pkg.ToMoney(resp.Balance), resp.Currency,
+	)
 }
 
 func (s *WalletService) recoverGameResult(ctx context.Context, order *model.GameOrder) error {
