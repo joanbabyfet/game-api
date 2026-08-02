@@ -254,9 +254,11 @@ func transferResponse(order *model.WalletTransfer) *providerdto.TransferResp {
 		TransferType: order.TransferType,
 		Amount:       pkg.ToAmount(order.Amount),
 		//转账后余额
-		Balance:  pkg.ToAmount(order.BalanceAfter),
-		Currency: order.Currency,
-		Status:   order.Status,
+		Balance:      pkg.ToAmount(order.BalanceAfter),
+		Currency:     order.Currency,
+		Status:       order.Status,
+		ErrorCode:    order.ErrorCode,
+		ErrorMessage: order.ErrorMessage,
 	}
 }
 

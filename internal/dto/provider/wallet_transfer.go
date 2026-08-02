@@ -23,6 +23,8 @@ type TransferResp struct {
 	Balance      float64 `json:"balance"`
 	Currency     string  `json:"currency"`
 	Status       int8    `json:"status"`
+	ErrorCode    int     `json:"error_code,omitempty"`
+	ErrorMessage string  `json:"error_message,omitempty"`
 }
 
 type TransferStatusResp = TransferResp

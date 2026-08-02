@@ -56,3 +56,17 @@ func TestReplayTransferFailedReturnsOriginalError(t *testing.T) {
 		t.Fatalf("expected original insufficient balance error, got %v", err)
 	}
 }
+
+func TestTransferResponseIncludesFailureDetails(t *testing.T) {
+	order := &model.WalletTransfer{
+		OrderNo: "transfer-1", ThirdOrderNo: "third-1",
+		TransferType: model.GameTransferTypeOut, Amount: 1000, Currency: "USD",
+		Status: model.GameTransferStatusFailed, ErrorCode: pkg.ORDER_PROCESSING,
+		ErrorMessage: "game order processing",
+	}
+
+	resp := transferResponse(order)
+	if resp.ErrorCode != pkg.ORDER_PROCESSING || resp.ErrorMessage != "game order processing" {
+		t.Fatalf("unexpected failure details: %+v", resp)
+	}
+}
