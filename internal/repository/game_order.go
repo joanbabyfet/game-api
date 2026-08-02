@@ -22,8 +22,8 @@ func NewGameOrderRepository(db *gorm.DB) *GameOrderRepository {
 }
 
 type GameOrderQuery struct {
-	OrderNo   string
-	RoundID   string
+	OrderNo string
+	RoundID string
 
 	UID     uint64
 	AgentID uint32
@@ -32,7 +32,7 @@ type GameOrderQuery struct {
 	Status *int8
 
 	SettleStartTime uint32
-    SettleEndTime   uint32
+	SettleEndTime   uint32
 
 	Page     int
 	PageSize int
@@ -94,7 +94,49 @@ func (r *GameOrderRepository) List(q GameOrderQuery) ([]model.GameOrder, error) 
 
 // Create 新增注单
 func (r *GameOrderRepository) Create(ctx context.Context, order *model.GameOrder) error {
-	return r.db.Create(order).Error
+	return r.db.WithContext(ctx).Create(order).Error
+}
+
+// GetByIDForUpdate 查询并锁定注单，必须在事务中调用。
+func (r *GameOrderRepository) GetByIDForUpdate(ctx context.Context, id uint64) (*model.GameOrder, error) {
+	var order model.GameOrder
+	err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ?", id).
+		First(&order).Error
+	if err != nil {
+		return nil, err
+	}
+	return &order, nil
+}
+
+// UpdateRolledBackFromBetSuccess 原子地将本地已扣款注单更新为已退款。
+func (r *GameOrderRepository) UpdateRolledBackFromBetSuccess(
+	ctx context.Context,
+	orderID uint64,
+	balanceAfter int64,
+	currency string,
+	reason string,
+) error {
+	now := time.Now().Unix()
+	result := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("id = ? AND status = ?", orderID, model.OrderStatusBetSuccess).
+		Updates(map[string]any{
+			"balance_after":   balanceAfter,
+			"currency":        currency,
+			"rollback_reason": reason,
+			"rollback_time":   now,
+			"status":          model.OrderStatusRolledBack,
+			"update_time":     now,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return pkg.ErrOrderStatus
+	}
+	return nil
 }
 
 // Update 更新注单
@@ -299,15 +341,15 @@ func (r *GameOrderRepository) UpdateGameResult(
 			model.OrderStatusBetSuccess,
 		).
 		Updates(map[string]interface{}{
-			"round_id":         roundID,
-			"bet_amount":       betAmount,
-			"win_amount":       winAmount,
-			"profit":           profit,
-			"spin_type":        spinType,
-			"free_spin_id":     freeSpinID,
-			"free_spin_index":  freeSpinIndex,
-			"status":           model.OrderStatusWaitSettle,
-			"update_time":      now,
+			"round_id":        roundID,
+			"bet_amount":      betAmount,
+			"win_amount":      winAmount,
+			"profit":          profit,
+			"spin_type":       spinType,
+			"free_spin_id":    freeSpinID,
+			"free_spin_index": freeSpinIndex,
+			"status":          model.OrderStatusWaitSettle,
+			"update_time":     now,
 		})
 
 	if result.Error != nil {

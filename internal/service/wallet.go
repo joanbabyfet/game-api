@@ -28,27 +28,29 @@ func walletCacheKey(uid uint64) string {
 
 type WalletService struct {
 	db              *gorm.DB
-	redisClient    *redis.Client
-	repo *repository.WalletRepository
-	agentRepo *repository.AgentRepository
-	gameRepo *repository.GameRepository
-	userRepo *repository.UserRepository
-	walletRepo *repository.WalletRepository
-	walletLogRepo *repository.WalletLogRepository
-	orderRepo *repository.GameOrderRepository
+	redisClient     *redis.Client
+	repo            *repository.WalletRepository
+	agentRepo       *repository.AgentRepository
+	gameRepo        *repository.GameRepository
+	agentGameRepo   *repository.AgentGameRepository
+	userRepo        *repository.UserRepository
+	walletRepo      *repository.WalletRepository
+	walletLogRepo   *repository.WalletLogRepository
+	orderRepo       *repository.GameOrderRepository
 	rollbackLogRepo *repository.RollbackLogRepository
-	adapter *adapter.WalletAdapter
-	slotAdapter *adapter.SlotAdapter
-	authService *AuthService
-	operatorClient *operator.Client
+	adapter         *adapter.WalletAdapter
+	slotAdapter     *adapter.SlotAdapter
+	authService     *AuthService
+	operatorClient  *operator.Client
 }
 
 func NewWalletService(
 	db *gorm.DB,
-	redisClient    *redis.Client,
+	redisClient *redis.Client,
 	repo *repository.WalletRepository,
 	agentRepo *repository.AgentRepository,
 	gameRepo *repository.GameRepository,
+	agentGameRepo *repository.AgentGameRepository,
 	userRepo *repository.UserRepository,
 	walletRepo *repository.WalletRepository,
 	walletLogRepo *repository.WalletLogRepository,
@@ -60,20 +62,21 @@ func NewWalletService(
 	operatorClient *operator.Client,
 ) *WalletService {
 	return &WalletService{
-		db: db,
-		redisClient:    redisClient,
-		repo: repo,
-		agentRepo: agentRepo,
-		gameRepo: gameRepo,
-		userRepo: userRepo,
-		walletRepo: walletRepo,
-		walletLogRepo: walletLogRepo,
-		orderRepo: orderRepo,
+		db:              db,
+		redisClient:     redisClient,
+		repo:            repo,
+		agentRepo:       agentRepo,
+		gameRepo:        gameRepo,
+		agentGameRepo:   agentGameRepo,
+		userRepo:        userRepo,
+		walletRepo:      walletRepo,
+		walletLogRepo:   walletLogRepo,
+		orderRepo:       orderRepo,
 		rollbackLogRepo: rollbackLogRepo,
-		adapter: adapter,
-		slotAdapter: slotAdapter,
-		authService: authService,
-		operatorClient: operatorClient,
+		adapter:         adapter,
+		slotAdapter:     slotAdapter,
+		authService:     authService,
+		operatorClient:  operatorClient,
 	}
 }
 
@@ -105,77 +108,118 @@ func (s *WalletService) List(ctx context.Context, q repository.WalletQuery) ([]m
 // 查询玩家余额(单一钱包下，余额来源就是 Operator) 两种钱包共用
 func (s *WalletService) Balance(ctx context.Context, req *provider.BalanceReq) (*provider.BalanceResp, error) {
 
-// 1. 解析 JWT
-        claims, err := pkg.ParseToken(req.Token)
-        if err != nil {
-                return nil, pkg.ErrUnauthorized
-        }
+	// 1. 解析 JWT
+	claims, err := pkg.ParseToken(req.Token)
+	if err != nil {
+		return nil, pkg.ErrUnauthorized
+	}
 
-        // 2. 查询代理及钱包模式
-        agent, err := s.agentRepo.GetByID(claims.AgentID)
-        if err != nil {
-                if errors.Is(err, gorm.ErrRecordNotFound) {
-                        return nil, pkg.ErrAgentNotFound
-                }
+	// 2. 查询代理及钱包模式
+	agent, err := s.agentRepo.GetByID(claims.AgentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkg.ErrAgentNotFound
+		}
 
-                return nil, err
-        }
+		return nil, err
+	}
+	switch agent.WalletMode {
 
-        switch agent.WalletMode {
+	case model.WalletModeSingle:
+		// 单一钱包：余额来源是 Operator
+		resp, err := s.operatorClient.Balance(
+			ctx,
+			agent.OperatorURL,
+			agent,
+			claims.PlayerID,
+		)
+		if err != nil {
+			return nil, err
+		}
 
-        case model.WalletModeSingle:
-                // 单一钱包：余额来源是 Operator
-                resp, err := s.operatorClient.Balance(
-                        ctx,
-                        agent.OperatorURL,
-                        agent,
-                        claims.PlayerID,
-                )
-                if err != nil {
-                        return nil, err
-                }
+		if resp == nil {
+			return nil, pkg.NewError(
+				pkg.UNKNOWN_ERROR,
+				"operator balance returned nil response",
+			)
+		}
 
-                if resp == nil {
-                        return nil, pkg.NewError(
-                                pkg.UNKNOWN_ERROR,
-                                "operator balance returned nil response",
-                        )
-                }
+		return &provider.BalanceResp{
+			Balance:  resp.Balance,
+			Currency: resp.Currency,
+		}, nil
 
-                return &provider.BalanceResp{
-                        Balance:  resp.Balance,
-                        Currency: resp.Currency,
-                }, nil
+	case model.WalletModeTransfer:
+		// 转账钱包：余额来源是 Provider 本地 wallet
+		wallet, err := s.getWallet(ctx, claims.UID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, pkg.ErrWalletNotFound
+			}
 
-        case model.WalletModeTransfer:
-                // 转账钱包：余额来源是 Provider 本地 wallet
-                wallet, err := s.getWallet(ctx, claims.UID)
-                if err != nil {
-                        if errors.Is(err, gorm.ErrRecordNotFound) {
-                                return nil, pkg.ErrWalletNotFound
-                        }
+			return nil, err
+		}
 
-                        return nil, err
-                }
+		// 防止异常 JWT 或脏数据跨代理读取钱包
+		if wallet.AgentID != claims.AgentID {
+			return nil, pkg.ErrForbidden
+		}
 
-                // 防止异常 JWT 或脏数据跨代理读取钱包
-                if wallet.AgentID != claims.AgentID {
-                        return nil, pkg.ErrForbidden
-                }
+		return &provider.BalanceResp{
+			Balance:  pkg.ToAmount(wallet.Balance),
+			Currency: agent.Currency,
+		}, nil
 
-                return &provider.BalanceResp{
-                        Balance:  pkg.ToAmount(wallet.Balance),
-                        Currency: agent.Currency,
-                }, nil
-
-        default:
-                return nil, pkg.ErrWalletModeInvalid
-        }
+	default:
+		return nil, pkg.ErrWalletModeInvalid
+	}
 }
 
-// Spin (每点击一次 Spin 调用)
+// Spin 根据 Agent 钱包模式分流。
 func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provider.SpinResp, error) {
-	
+	claims, err := pkg.ParseToken(req.Token)
+	if err != nil {
+		return nil, pkg.ErrUnauthorized
+	}
+
+	agent, err := s.agentRepo.GetByID(claims.AgentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkg.ErrAgentNotFound
+		}
+		return nil, err
+	}
+	game, err := s.gameRepo.GetByCode(req.GameCode)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkg.ErrGameNotFound
+		}
+		return nil, err
+	}
+	if game.Status != model.GameStatusEnable {
+		return nil, pkg.ErrGameDisabled
+	}
+	//Agent 游戏权限检查
+	agentGame, err := s.agentGameRepo.GetByAgentGame(agent.ID, game.ID)
+	if err != nil || agentGame.Status != model.AgentGameStatusEnable {
+		return nil, pkg.ErrForbidden
+	}
+
+	switch agent.WalletMode {
+		//单一钱包
+		case model.WalletModeSingle:
+			return s.spinSingleWallet(ctx, req)
+		//转帐钱包
+		case model.WalletModeTransfer:
+			return s.spinTransferWallet(ctx, req, claims, agent)
+		default:
+			return nil, pkg.ErrWalletModeInvalid
+	}
+}
+
+// spinSingleWallet 执行单一钱包 Spin。
+func (s *WalletService) spinSingleWallet(ctx context.Context, req *provider.SpinReq) (*provider.SpinResp, error) {
+
 	// 1. 解析 JWT
 	claims, err := pkg.ParseToken(req.Token)
 	if err != nil {
@@ -203,22 +247,25 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 
 	// 普通 Spin 必须有下注金额
 	if !isFreeSpin && req.BetAmount <= 0 {
-			return nil, pkg.NewError(
-					pkg.INVALID_PARAM,
-					"bet_amount must be greater than zero",
-			)
+		return nil, pkg.NewError(
+			pkg.INVALID_PARAM,
+			"bet_amount must be greater than zero",
+		)
 	}
 	// Free Spin 不接受正数或负数下注额
 	if isFreeSpin && req.BetAmount != 0 {
-			return nil, pkg.NewError(
-					pkg.INVALID_PARAM,
-					"bet_amount must be zero or omitted for free spin",
-			)
+		return nil, pkg.NewError(
+			pkg.INVALID_PARAM,
+			"bet_amount must be zero or omitted for free spin",
+		)
 	}
 
 	// 4. request_id 幂等检查
 	order, err := s.orderRepo.GetByRequestID(ctx, req.RequestID)
 	if err == nil {
+		if replayErr := validateSpinReplay(order, req, claims, game, spinType); replayErr != nil {
+			return nil, replayErr
+		}
 		// 已存在注单，直接回放，不重新下注
 		return s.replaySpin(order)
 	}
@@ -228,7 +275,7 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	}
 
 	//这些由入口 Provider API 生成
-	requestID := req.RequestID //幂等(由 Provider API 传入)
+	requestID := req.RequestID  //幂等(由 Provider API 传入)
 	orderNo := pkg.GenOrderNo() //注單号
 
 	// 普通 Spin 的下注金额来自请求
@@ -245,20 +292,20 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 
 	//5. 第一次请求，开始创建注单
 	order = &model.GameOrder{
-		RequestID:  requestID,
-		OrderNo:    orderNo,
-		UID:        claims.UID,
-		AgentID:    claims.AgentID,
-		GameID:     game.ID,
-		BetAmount:  betAmount,
-		WinAmount:  0,
-		Profit:     0,
-		Currency:   claims.Currency,
-		SpinType:   spinType,
-		FreeSpinID:   req.FreeSpinID,
+		RequestID:     requestID,
+		OrderNo:       orderNo,
+		UID:           claims.UID,
+		AgentID:       claims.AgentID,
+		GameID:        game.ID,
+		BetAmount:     betAmount,
+		WinAmount:     0,
+		Profit:        0,
+		Currency:      claims.Currency,
+		SpinType:      spinType,
+		FreeSpinID:    req.FreeSpinID,
 		FreeSpinIndex: 0,
-		Status:     orderStatus, //Provider 已创建 game_order，Operator 下注结果尚未确认
-		CreateTime: time.Now().Unix(),
+		Status:        orderStatus, //Provider 已创建 game_order，Operator 下注结果尚未确认
+		CreateTime:    time.Now().Unix(),
 	}
 	if err := s.orderRepo.Create(ctx, order); err != nil {
 		return nil, err
@@ -365,16 +412,16 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 
 	// 7. 调用 Skynet 执行游戏逻辑
 	pbReq := &slotpb.SpinReq{
-		RequestId: requestID,
-		OrderNo:   orderNo,
-		Uid:       claims.UID,
-		AgentId:   claims.AgentID,
-		GameId:    game.ID,
-		BetAmount: pbBetAmount,
-		Currency:  claims.Currency,
-		SpinType:  uint32(spinType),
+		RequestId:  requestID,
+		OrderNo:    orderNo,
+		Uid:        claims.UID,
+		AgentId:    claims.AgentID,
+		GameId:     game.ID,
+		BetAmount:  pbBetAmount,
+		Currency:   claims.Currency,
+		SpinType:   uint32(spinType),
 		FreeSpinId: req.FreeSpinID,
-		DebugFail: req.DebugFail, //测试取消下注用
+		DebugFail:  req.DebugFail, //测试取消下注用
 	}
 	var (
 		spinResp *slotpb.SpinResp
@@ -688,8 +735,8 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 
 	resp := &provider.SpinResp{
 		// 单一钱包模式下，最终余额和币种以 Operator 返回为准
-		Balance:  settleResp.Balance,
-		Currency: settleResp.Currency,
+		Balance:             settleResp.Balance,
+		Currency:            settleResp.Currency,
 		RoundID:             spinResp.RoundId,
 		WinAmount:           pkg.ToAmount(spinResp.WinAmount),
 		SpinType:            uint8(spinResp.SpinType),
@@ -991,7 +1038,7 @@ func (s *WalletService) Rollback(
 					AgentID:    order.AgentID,
 					GameID:     order.GameID,
 					Amount:     rollbackAmount,
-					Type:    	model.WalletLogTypeRollback,
+					Type:       model.WalletLogTypeRollback,
 					RefOrderNo: order.OrderNo,
 				},
 			)
@@ -1019,7 +1066,7 @@ func (s *WalletService) Rollback(
 						AgentID:    order.AgentID,
 						GameID:     order.GameID,
 						Amount:     rollbackAmount,
-						Type:    	model.WalletLogTypeRollback,
+						Type:       model.WalletLogTypeRollback,
 						RefOrderNo: order.OrderNo,
 					},
 				)
@@ -1036,7 +1083,7 @@ func (s *WalletService) Rollback(
 						AgentID:    order.AgentID,
 						GameID:     order.GameID,
 						Amount:     -rollbackAmount,
-						Type:    	model.WalletLogTypeRollback,
+						Type:       model.WalletLogTypeRollback,
 						RefOrderNo: order.OrderNo,
 					},
 				)
@@ -1074,12 +1121,12 @@ func (s *WalletService) Rollback(
 			&model.RollbackLog{
 				RollbackType: req.RollbackType,
 				RollbackNo:   pkg.GenRollbackNo(),
-				OrderNo:     order.OrderNo,
-				RoundID:     order.RoundID,
-				RequestID:   req.RequestID,
-				AgentID:     order.AgentID,
-				UID:         order.UID,
-				GameID:      order.GameID,
+				OrderNo:      order.OrderNo,
+				RoundID:      order.RoundID,
+				RequestID:    req.RequestID,
+				AgentID:      order.AgentID,
+				UID:          order.UID,
+				GameID:       order.GameID,
 
 				// 保留正负值：
 				// 正数代表加回钱包；
