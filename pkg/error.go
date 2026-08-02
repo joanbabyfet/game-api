@@ -30,6 +30,7 @@ var (
 	ErrWalletNotFound          = NewError(WALLET_NOT_FOUND, "wallet not found")
 	ErrOrderNotFound           = NewError(ORDER_NOT_FOUND, "order not found")
 	ErrOrderStatusInvalid      = NewError(ORDER_STATUS_INVALID, "order status invalid")
+	ErrOrderProcessing         = NewError(ORDER_PROCESSING, "game order processing")
 	ErrOrderUpdateFailed       = NewError(ORDER_UPDATE_FAILED, "order update failed")
 	ErrOrderStatus             = NewError(ORDER_STATUS_ERROR, "order status error")
 	ErrWalletAddFailed         = NewError(WALLET_ADD_FAILED, "wallet add failed")

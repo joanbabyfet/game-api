@@ -24,6 +24,7 @@ type WalletTransferService struct {
 	walletRepo        *repository.WalletRepository
 	walletLogRepo     *repository.WalletLogRepository
 	transferOrderRepo *repository.WalletTransferRepository
+	gameOrderRepo     *repository.GameOrderRepository
 	authService       *AuthService
 }
 
@@ -36,21 +37,22 @@ func NewWalletTransferService(
 	walletRepo *repository.WalletRepository,
 	walletLogRepo *repository.WalletLogRepository,
 	transferOrderRepo *repository.WalletTransferRepository,
+	gameOrderRepo *repository.GameOrderRepository,
 	authService *AuthService,
 ) *WalletTransferService {
 	return &WalletTransferService{
 		db: db, redisClient: redisClient, userRepo: userRepo, gameRepo: gameRepo,
 		agentGameRepo: agentGameRepo, walletRepo: walletRepo, walletLogRepo: walletLogRepo,
-		transferOrderRepo: transferOrderRepo, authService: authService,
+		transferOrderRepo: transferOrderRepo, gameOrderRepo: gameOrderRepo, authService: authService,
 	}
 }
 
-//转入游戏钱包
+// 转入游戏钱包
 func (s *WalletTransferService) TransferIn(ctx context.Context, req *providerdto.TransferReq) (*providerdto.TransferResp, error) {
 	return s.transfer(ctx, req, model.GameTransferTypeIn)
 }
 
-//转出游戏钱包
+// 转出游戏钱包
 func (s *WalletTransferService) TransferOut(ctx context.Context, req *providerdto.TransferReq) (*providerdto.TransferResp, error) {
 	return s.transfer(ctx, req, model.GameTransferTypeOut)
 }
@@ -117,6 +119,7 @@ func (s *WalletTransferService) transfer(ctx context.Context, req *providerdto.T
 		orderRepo := s.transferOrderRepo.WithTx(tx)
 		walletRepo := s.walletRepo.WithTx(tx)
 		walletLogRepo := s.walletLogRepo.WithTx(tx)
+		gameOrderRepo := s.gameOrderRepo.WithTx(tx)
 
 		if err := orderRepo.Create(ctx, order); err != nil {
 			return err
@@ -128,6 +131,16 @@ func (s *WalletTransferService) transfer(ctx context.Context, req *providerdto.T
 		}
 		if err != nil {
 			return err
+		}
+		if transferType == model.GameTransferTypeOut {
+			processing, err := gameOrderRepo.ExistsProcessingTransferOrder(ctx, user.UID, agent.ID)
+			if err != nil {
+				return err
+			}
+			if processing {
+				businessErr = pkg.ErrOrderProcessing
+				return orderRepo.UpdateFailed(ctx, order.ID, pkg.ORDER_PROCESSING, businessErr.Error())
+			}
 		}
 
 		before := wallet.Balance
@@ -203,14 +216,14 @@ func (s *WalletTransferService) Status(ctx context.Context, req *providerdto.Tra
 
 func transferSignData(req *providerdto.TransferReq) string {
 	return pkg.BuildSignData(map[string]any{
-		"amount": req.Amount, 
-		"app_id": req.AppID, 
-		"currency": req.Currency,
-		"game_code": req.GameCode, 
-		"player_id": req.PlayerID, 
-		"request_id": req.RequestID,
-		"third_order_no": req.ThirdOrderNo, 
-		"timestamp": req.Timestamp,
+		"amount":         req.Amount,
+		"app_id":         req.AppID,
+		"currency":       req.Currency,
+		"game_code":      req.GameCode,
+		"player_id":      req.PlayerID,
+		"request_id":     req.RequestID,
+		"third_order_no": req.ThirdOrderNo,
+		"timestamp":      req.Timestamp,
 	})
 }
 
@@ -236,14 +249,14 @@ func replayTransfer(order *model.WalletTransfer, req *providerdto.TransferReq, u
 
 func transferResponse(order *model.WalletTransfer) *providerdto.TransferResp {
 	return &providerdto.TransferResp{
-		OrderNo: order.OrderNo, 
-		ThirdOrderNo: order.ThirdOrderNo, 
+		OrderNo:      order.OrderNo,
+		ThirdOrderNo: order.ThirdOrderNo,
 		TransferType: order.TransferType,
-		Amount: pkg.ToAmount(order.Amount),
+		Amount:       pkg.ToAmount(order.Amount),
 		//转账后余额
-		Balance: pkg.ToAmount(order.BalanceAfter),
-		Currency: order.Currency, 
-		Status: order.Status,
+		Balance:  pkg.ToAmount(order.BalanceAfter),
+		Currency: order.Currency,
+		Status:   order.Status,
 	}
 }
 

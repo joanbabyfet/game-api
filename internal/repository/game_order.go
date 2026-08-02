@@ -21,6 +21,23 @@ func NewGameOrderRepository(db *gorm.DB) *GameOrderRepository {
 	}
 }
 
+// ExistsProcessingTransferOrder 查询玩家是否存在尚未完成的转账钱包游戏注单。
+func (r *GameOrderRepository) ExistsProcessingTransferOrder(ctx context.Context, uid uint64, agentID uint32) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.GameOrder{}).
+		Where("uid = ? AND agent_id = ? AND wallet_mode = ?", uid, agentID, model.WalletModeTransfer).
+		Where("status IN ?", []int8{
+			model.OrderStatusPending,
+			model.OrderStatusBetSuccess,
+			model.OrderStatusWaitSettle,
+			model.OrderStatusWaitRollback,
+		}).
+		Limit(1).
+		Count(&count).Error
+	return count > 0, err
+}
+
 type GameOrderQuery struct {
 	OrderNo string
 	RoundID string
