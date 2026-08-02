@@ -20,6 +20,9 @@ type GameOrder struct {
 	// 代理ID
 	AgentID uint32 `gorm:"column:agent_id" json:"agent_id"`
 
+	// 创建注单时的钱包模式快照：1=单一钱包 2=转账钱包
+	WalletMode int8 `gorm:"column:wallet_mode" json:"wallet_mode"`
+
 	// 游戏ID
 	GameID uint32 `gorm:"column:game_id" json:"game_id"`
 
@@ -84,11 +87,11 @@ const (
 
 // 注单状态
 const (
-	OrderStatusPending        int8 = 0 // 处理中 (Provider 已创建 game_order，Operator 下注结果尚未确认)
-	OrderStatusBetSuccess     int8 = 1 // 扣款成功 (等待 Skynet 游戏结果)
-	OrderStatusWaitSettle     int8 = 2 // 待派奖 (等待 Operator 派奖)
-	OrderStatusSettled        int8 = 3 // 已结算 (Operator 派奖成功，整笔注单完成)
-	OrderStatusWaitRollback   int8 = 4 // 待回滚 (Skynet 明确失败，等待 Operator 回滚)
-	OrderStatusRolledBack     int8 = 5 // 已回滚 (Operator 回滚成功)
-	OrderStatusFailed         int8 = 6 // 失败 (明确失败且不再进行补偿)
+	OrderStatusPending      int8 = 0 // 处理中 (Provider 已创建 game_order，Operator 下注结果尚未确认)
+	OrderStatusBetSuccess   int8 = 1 // 扣款成功 (等待 Skynet 游戏结果)
+	OrderStatusWaitSettle   int8 = 2 // 待派奖 (等待 Operator 派奖)
+	OrderStatusSettled      int8 = 3 // 已结算 (Operator 派奖成功，整笔注单完成)
+	OrderStatusWaitRollback int8 = 4 // 待回滚 (Skynet 明确失败，等待 Operator 回滚)
+	OrderStatusRolledBack   int8 = 5 // 已回滚 (Operator 回滚成功)
+	OrderStatusFailed       int8 = 6 // 失败 (明确失败且不再进行补偿)
 )

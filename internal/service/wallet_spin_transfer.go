@@ -46,7 +46,7 @@ func (s *WalletService) spinTransferWallet(
 	}
 
 	if existing, findErr := s.orderRepo.GetByRequestID(ctx, req.RequestID); findErr == nil {
-		if err := validateSpinReplay(existing, req, claims, game, spinType); err != nil {
+		if err := validateSpinReplay(existing, req, claims, game, spinType, model.WalletModeTransfer); err != nil {
 			return nil, err
 		}
 		return s.replaySpin(existing)
@@ -59,6 +59,7 @@ func (s *WalletService) spinTransferWallet(
 		OrderNo:    pkg.GenOrderNo(),
 		UID:        claims.UID,
 		AgentID:    agent.ID,
+		WalletMode: model.WalletModeTransfer,
 		GameID:     game.ID,
 		Currency:   agent.Currency,
 		SpinType:   spinType,
@@ -74,7 +75,7 @@ func (s *WalletService) spinTransferWallet(
 		}
 		if err := s.debitTransferSpin(ctx, order); err != nil {
 			if existing, findErr := s.orderRepo.GetByRequestID(ctx, req.RequestID); findErr == nil {
-				if replayErr := validateSpinReplay(existing, req, claims, game, spinType); replayErr != nil {
+				if replayErr := validateSpinReplay(existing, req, claims, game, spinType, model.WalletModeTransfer); replayErr != nil {
 					return nil, replayErr
 				}
 				return s.replaySpin(existing)
@@ -83,7 +84,7 @@ func (s *WalletService) spinTransferWallet(
 		}
 	} else if err := s.orderRepo.Create(ctx, order); err != nil {
 		if existing, findErr := s.orderRepo.GetByRequestID(ctx, req.RequestID); findErr == nil {
-			if replayErr := validateSpinReplay(existing, req, claims, game, spinType); replayErr != nil {
+			if replayErr := validateSpinReplay(existing, req, claims, game, spinType, model.WalletModeTransfer); replayErr != nil {
 				return nil, replayErr
 			}
 			return s.replaySpin(existing)
@@ -173,7 +174,7 @@ func (s *WalletService) spinTransferWallet(
 	}, nil
 }
 
-//游戏钱包本地下注扣钱 (本地扣款、钱包流水、注单状态在同一事务内)
+// 游戏钱包本地下注扣钱 (本地扣款、钱包流水、注单状态在同一事务内)
 func (s *WalletService) debitTransferSpin(ctx context.Context, order *model.GameOrder) error {
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		walletRepo := s.walletRepo.WithTx(tx)
@@ -222,7 +223,7 @@ func (s *WalletService) debitTransferSpin(ctx context.Context, order *model.Game
 	return err
 }
 
-//游戏钱包本地派奖加钱 (Skynet成功后，本地派奖与注单结算在同一事务内)
+// 游戏钱包本地派奖加钱 (Skynet成功后，本地派奖与注单结算在同一事务内)
 func (s *WalletService) settleTransferSpin(ctx context.Context, orderID uint64) (int64, error) {
 	var balanceAfter int64
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -273,7 +274,7 @@ func (s *WalletService) settleTransferSpin(ctx context.Context, orderID uint64) 
 	return balanceAfter, err
 }
 
-//Skynet明确业务失败时退回本地下注
+// Skynet明确业务失败时退回本地下注
 func (s *WalletService) rollbackTransferSpin(ctx context.Context, orderID uint64, reason string) error {
 	var uid uint64
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -323,9 +324,10 @@ func validateSpinReplay(
 	claims *pkg.JWTClaims,
 	game *model.Game,
 	spinType uint8,
+	walletMode int8,
 ) error {
 	if order.UID != claims.UID || order.AgentID != claims.AgentID || order.GameID != game.ID ||
-		order.SpinType != spinType || order.FreeSpinID != req.FreeSpinID {
+		order.SpinType != spinType || order.FreeSpinID != req.FreeSpinID || order.WalletMode != walletMode {
 		return pkg.NewError(pkg.ORDER_STATUS_ERROR, "request_id conflicts with existing spin")
 	}
 	if spinType == model.SpinTypeNormal && order.BetAmount != pkg.ToMoney(req.BetAmount) {

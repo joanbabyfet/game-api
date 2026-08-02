@@ -206,14 +206,14 @@ func (s *WalletService) Spin(ctx context.Context, req *provider.SpinReq) (*provi
 	}
 
 	switch agent.WalletMode {
-		//单一钱包
-		case model.WalletModeSingle:
-			return s.spinSingleWallet(ctx, req)
-		//转帐钱包
-		case model.WalletModeTransfer:
-			return s.spinTransferWallet(ctx, req, claims, agent)
-		default:
-			return nil, pkg.ErrWalletModeInvalid
+	//单一钱包
+	case model.WalletModeSingle:
+		return s.spinSingleWallet(ctx, req)
+	//转帐钱包
+	case model.WalletModeTransfer:
+		return s.spinTransferWallet(ctx, req, claims, agent)
+	default:
+		return nil, pkg.ErrWalletModeInvalid
 	}
 }
 
@@ -263,7 +263,7 @@ func (s *WalletService) spinSingleWallet(ctx context.Context, req *provider.Spin
 	// 4. request_id 幂等检查
 	order, err := s.orderRepo.GetByRequestID(ctx, req.RequestID)
 	if err == nil {
-		if replayErr := validateSpinReplay(order, req, claims, game, spinType); replayErr != nil {
+		if replayErr := validateSpinReplay(order, req, claims, game, spinType, model.WalletModeSingle); replayErr != nil {
 			return nil, replayErr
 		}
 		// 已存在注单，直接回放，不重新下注
@@ -296,6 +296,7 @@ func (s *WalletService) spinSingleWallet(ctx context.Context, req *provider.Spin
 		OrderNo:       orderNo,
 		UID:           claims.UID,
 		AgentID:       claims.AgentID,
+		WalletMode:    model.WalletModeSingle,
 		GameID:        game.ID,
 		BetAmount:     betAmount,
 		WinAmount:     0,

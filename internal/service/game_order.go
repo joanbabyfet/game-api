@@ -9,8 +9,8 @@ import (
 )
 
 type GameOrderService struct {
-	repo *repository.GameOrderRepository
-	gameRepo *repository.GameRepository
+	repo        *repository.GameOrderRepository
+	gameRepo    *repository.GameRepository
 	authService *AuthService
 }
 
@@ -20,8 +20,8 @@ func NewGameOrderService(
 	authService *AuthService,
 ) *GameOrderService {
 	return &GameOrderService{
-		repo: repo,
-		gameRepo: gameRepo,
+		repo:        repo,
+		gameRepo:    gameRepo,
 		authService: authService,
 	}
 }
@@ -66,15 +66,15 @@ func (s *GameOrderService) List(q repository.GameOrderQuery) ([]model.GameOrder,
 	return s.repo.List(q)
 }
 
-//获取注单记录
+// 获取注单记录
 func (s *GameOrderService) GetOrderLog(ctx context.Context, req *provider.OrderLogReq) ([]provider.OrderLogResp, error) {
-	
+
 	// 驗證 Agent 簽名
 	data := pkg.BuildSignData(map[string]any{
-		"app_id":    	req.AppID,
-		"start_time":	req.StartTime,
-		"end_time":  	req.EndTime,
-		"timestamp": 	req.Timestamp,
+		"app_id":     req.AppID,
+		"start_time": req.StartTime,
+		"end_time":   req.EndTime,
+		"timestamp":  req.Timestamp,
 	})
 
 	agent, err := s.authService.VerifySign(ctx, req.AppID, data, req.Sign)
@@ -99,7 +99,7 @@ func (s *GameOrderService) GetOrderLog(ctx context.Context, req *provider.OrderL
 
 	// 查询注单
 	query := repository.GameOrderQuery{
-		AgentID:   agent.ID,
+		AgentID:         agent.ID,
 		SettleStartTime: uint32(startTime),
 		SettleEndTime:   uint32(endTime),
 	}
@@ -139,6 +139,7 @@ func (s *GameOrderService) GetOrderLog(ctx context.Context, req *provider.OrderL
 			OrderNo:    order.OrderNo,
 			RoundID:    order.RoundID,
 			UID:        order.UID,
+			WalletMode: order.WalletMode,
 			GameCode:   gameMap[order.GameID],
 			BetAmount:  pkg.ToAmount(int64(order.BetAmount)),
 			WinAmount:  pkg.ToAmount(int64(order.WinAmount)),

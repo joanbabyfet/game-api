@@ -10,10 +10,11 @@ type GameOrderListReq struct {
 }
 
 type GameOrderListResp struct {
-	OrderNo   string `json:"order_no"`
-	RoundID   string `json:"round_id"`
+	OrderNo string `json:"order_no"`
+	RoundID string `json:"round_id"`
 
-	GameID uint32 `json:"game_id"`
+	GameID     uint32 `json:"game_id"`
+	WalletMode int8   `json:"wallet_mode"`
 
 	BetAmount uint64 `json:"bet_amount"`
 	WinAmount uint64 `json:"win_amount"`
