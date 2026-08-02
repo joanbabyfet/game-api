@@ -102,32 +102,75 @@ func (s *WalletService) List(ctx context.Context, q repository.WalletQuery) ([]m
 	return s.repo.List(ctx, q)
 }
 
-// 查询玩家余额(单一钱包下，余额来源就是 Operator)
+// 查询玩家余额(单一钱包下，余额来源就是 Operator) 两种钱包共用
 func (s *WalletService) Balance(ctx context.Context, req *provider.BalanceReq) (*provider.BalanceResp, error) {
 
-	//解析 JWT (客户端已经登录过，不需要再验 app_id + sign)
-	claims, err := pkg.ParseToken(req.Token)
-	if err != nil {
-		return nil, pkg.ErrUnauthorized
-	}
+// 1. 解析 JWT
+        claims, err := pkg.ParseToken(req.Token)
+        if err != nil {
+                return nil, pkg.ErrUnauthorized
+        }
 
-	//获取代理信息
-	agent, err := s.agentRepo.GetByID(claims.AgentID)
-	if err != nil {
-		return nil, err
-	}
+        // 2. 查询代理及钱包模式
+        agent, err := s.agentRepo.GetByID(claims.AgentID)
+        if err != nil {
+                if errors.Is(err, gorm.ErrRecordNotFound) {
+                        return nil, pkg.ErrAgentNotFound
+                }
 
-	//调用 Operator
-	resp, err := s.operatorClient.Balance(ctx, agent.OperatorURL, agent, claims.PlayerID)
-	if err != nil {
-		return nil, err
-	}
+                return nil, err
+        }
 
-	// DTO 轉換
-	return &provider.BalanceResp{
-		Balance: resp.Balance,
-		Currency: resp.Currency,
-	}, nil
+        switch agent.WalletMode {
+
+        case model.WalletModeSingle:
+                // 单一钱包：余额来源是 Operator
+                resp, err := s.operatorClient.Balance(
+                        ctx,
+                        agent.OperatorURL,
+                        agent,
+                        claims.PlayerID,
+                )
+                if err != nil {
+                        return nil, err
+                }
+
+                if resp == nil {
+                        return nil, pkg.NewError(
+                                pkg.UNKNOWN_ERROR,
+                                "operator balance returned nil response",
+                        )
+                }
+
+                return &provider.BalanceResp{
+                        Balance:  resp.Balance,
+                        Currency: resp.Currency,
+                }, nil
+
+        case model.WalletModeTransfer:
+                // 转账钱包：余额来源是 Provider 本地 wallet
+                wallet, err := s.getWallet(ctx, claims.UID)
+                if err != nil {
+                        if errors.Is(err, gorm.ErrRecordNotFound) {
+                                return nil, pkg.ErrWalletNotFound
+                        }
+
+                        return nil, err
+                }
+
+                // 防止异常 JWT 或脏数据跨代理读取钱包
+                if wallet.AgentID != claims.AgentID {
+                        return nil, pkg.ErrForbidden
+                }
+
+                return &provider.BalanceResp{
+                        Balance:  pkg.ToAmount(wallet.Balance),
+                        Currency: agent.Currency,
+                }, nil
+
+        default:
+                return nil, pkg.ErrWalletModeInvalid
+        }
 }
 
 // Spin (每点击一次 Spin 调用)
@@ -1064,26 +1107,6 @@ func (s *WalletService) Rollback(
 
 	return balance, nil
 }
-
-// Balance 查询余额
-// func (s *WalletService) Balance(
-// 	ctx context.Context,
-// 	uid uint64,
-// ) (*provider.BalanceResp, error) {
-// 	wallet, err := s.getWallet(ctx, uid)
-// 	if err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, pkg.ErrWalletNotFound
-// 		}
-
-// 		return nil, err
-// 	}
-
-// 	return &provider.BalanceResp{
-// 		Balance:  pkg.ToAmount(wallet.Balance),
-// 		//Currency: wallet.Currency,
-// 	}, nil
-// }
 
 // Info 查询钱包完整信息
 func (s *WalletService) Info(

@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	DefaultPage     = 1		// 第几页
-	DefaultPageSize = 20	// 每页几条
-	MaxPageSize     = 100	// 最多几条
+	DefaultPage     = 1   // 第几页
+	DefaultPageSize = 20  // 每页几条
+	MaxPageSize     = 100 // 最多几条
 
 	DateLayout     = "2006-01-02"
 	DateTimeLayout = "2006-01-02 15:04:05"
@@ -165,4 +165,9 @@ func GenFreeSpinID() string {
 // 生成回滚单号
 func GenRollbackNo() string {
 	return GenBizID("RB")
+}
+
+// GenTransferNo 生成转账单号
+func GenTransferNo() string {
+	return GenBizID("T")
 }

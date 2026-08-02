@@ -1,5 +1,10 @@
 package model
 
+const (
+	WalletModeSingle   int8 = 1
+	WalletModeTransfer int8 = 2
+)
+
 // Agent 代理
 type Agent struct {
 	// 代理ID
@@ -37,6 +42,9 @@ type Agent struct {
 
 	// 回调地址
 	CallbackURL string `gorm:"column:callback_url;size:255" json:"callback_url"`
+
+	// 钱包模式：1=单一钱包 2=转账钱包
+	WalletMode int8 `gorm:"column:wallet_mode" json:"wallet_mode"`
 
 	// 状态：0=禁用 1=启用
 	Status int8 `gorm:"column:status" json:"status"`

@@ -40,14 +40,14 @@ func (WalletLog) TableName() string {
 
 // Wallet Log Type
 const (
-	WalletLogTypeBet       = "BET"        // 下注
-	WalletLogTypeWin       = "WIN"        // 派奖
-	WalletLogTypeBonus     = "BONUS"      // Bonus 奖励
-	WalletLogTypeFreeSpin  = "FREE_SPIN"  // 免费游戏奖励
-	WalletLogTypeJackpot   = "JACKPOT"    // 奖池奖励
-	WalletLogTypeDeposit   = "DEPOSIT"    // 充值
-	WalletLogTypeWithdraw  = "WITHDRAW"   // 提现
-	WalletLogTypeAdminAdd  = "ADMIN_ADD"  // 后台加钱
-	WalletLogTypeAdminSub  = "ADMIN_SUB"  // 后台扣钱
-	WalletLogTypeRollback  = "ROLLBACK"   // 回滚
+	WalletLogTypeBet         = "BET"          // 下注
+	WalletLogTypeWin         = "WIN"          // 派奖
+	WalletLogTypeBonus       = "BONUS"        // Bonus 奖励
+	WalletLogTypeFreeSpin    = "FREE_SPIN"    // 免费游戏奖励
+	WalletLogTypeJackpot     = "JACKPOT"      // 奖池奖励
+	WalletLogTypeAdminAdd    = "ADMIN_ADD"    // 后台加钱
+	WalletLogTypeAdminSub    = "ADMIN_SUB"    // 后台扣钱
+	WalletLogTypeRollback    = "ROLLBACK"     // 回滚
+	WalletLogTypeTransferIn  = "TRANSFER_IN"  // 转入游戏钱包
+	WalletLogTypeTransferOut = "TRANSFER_OUT" // 转出游戏钱包
 )

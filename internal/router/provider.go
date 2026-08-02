@@ -13,8 +13,8 @@ import (
 
 func RegisterProvider(r *gin.Engine) {
 
-    api := r.Group("/provider")
-	
+	api := r.Group("/provider")
+
 	// Operator Client
 	operatorClient := operator.New()
 
@@ -36,6 +36,7 @@ func RegisterProvider(r *gin.Engine) {
 	walletRepo := repository.NewWalletRepository(bootstrap.DB)
 	walletLogRepo := repository.NewWalletLogRepository(bootstrap.DB)
 	rollbackLogRepo := repository.NewRollbackLogRepository(bootstrap.DB)
+	walletTransferRepo := repository.NewWalletTransferRepository(bootstrap.DB)
 
 	// Service
 	authService := service.NewAuthService(agentRepo)
@@ -84,6 +85,17 @@ func RegisterProvider(r *gin.Engine) {
 	debugService := service.NewDebugService(
 		agentRepo,
 	)
+	walletTransferService := service.NewWalletTransferService(
+		bootstrap.DB,
+		bootstrap.GetRedis(),
+		userRepo,
+		gameRepo,
+		agentGameRepo,
+		walletRepo,
+		walletLogRepo,
+		walletTransferRepo,
+		authService,
+	)
 
 	// Controller
 	gameController := provider.NewGameController(
@@ -104,7 +116,8 @@ func RegisterProvider(r *gin.Engine) {
 	debugController := provider.NewDebugController(
 		debugService,
 	)
-	
+	walletTransferController := provider.NewWalletTransferController(walletTransferService)
+
 	//单一钱包接口
 	api.POST("/player/login", userController.Login)
 	api.POST("/game_url", gameController.GetGameURL)
@@ -113,10 +126,15 @@ func RegisterProvider(r *gin.Engine) {
 	api.POST("/get_order_log", orderController.GetOrderLog)
 	api.POST("/ping", systemController.Ping)
 
-	//Cocos 
+	//Cocos
 	api.POST("/player/balance", walletController.Balance) //进入游戏、需要刷新余额时
-	api.POST("/spin", walletController.Spin) //每点击一次 Spin
-	
+	api.POST("/spin", walletController.Spin)              //每点击一次 Spin
+
+	// 转账钱包接口
+	api.POST("/wallet/transfer_in", walletTransferController.TransferIn)
+	api.POST("/wallet/transfer_out", walletTransferController.TransferOut)
+	api.POST("/wallet/transfer_status", walletTransferController.Status)
+
 	//测试用
 	api.POST("/debug/sign", debugController.Sign)
 }
