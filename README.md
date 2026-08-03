@@ -165,4 +165,4 @@ go run ./cmd/worker
 
 ## License
 
-MIT
+[MIT License](https://github.com/joanbabyfet/game-api/blob/main/LICENSE)
